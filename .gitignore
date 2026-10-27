@@ -6,4 +6,7 @@ node_modules/
 dist/
 .next/
 coverage/
+screenshot/
+videos/
+.herdr-web-ui/
 *.log
