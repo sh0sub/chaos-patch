@@ -4,7 +4,7 @@ This checklist contains the account, consent, and desktop actions that require t
 
 ## Current local status (2026-10-27)
 
-- Node.js 22, pnpm 10, npm, Git, Codex CLI, and FFmpeg are installed.
+- Node.js 22.12 or newer, pnpm 10, npm, Git, Codex CLI, and FFmpeg are installed.
 - `OPENAI_API_KEY` is present in the environment. Its value has not been read or printed.
 - The project uses an ignored `.env.local`; its values must never be printed, captured, or committed.
 - OBS Studio 33.0.0 is installed at `/Applications/OBS.app`.

@@ -10,7 +10,7 @@ Built for the Codex x TwitchCon Hackathon (deadline November 2, 2026 at 2:00 PM 
 
 ## Local run
 
-Requirements: Node.js 22+, pnpm 10+, a confidential Twitch application with callback `http://localhost:3000/auth/callback`, and an OpenAI API key.
+Requirements: Node.js 22.12+, pnpm 10+, a confidential Twitch application with callback `http://localhost:3000/auth/callback`, and an OpenAI API key.
 
 ```bash
 bash scripts/setup-secrets.sh

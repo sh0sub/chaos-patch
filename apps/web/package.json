@@ -12,13 +12,13 @@
   "dependencies": {
     "@chaos-patch/game": "workspace:*",
     "@chaos-patch/schema": "workspace:*",
-    "@vitejs/plugin-react": "latest",
-    "vite": "latest",
-    "react": "latest",
-    "react-dom": "latest"
+    "@vitejs/plugin-react": "4.3.4",
+    "vite": "5.4.21",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
   },
   "devDependencies": {
-    "@types/react": "latest",
-    "@types/react-dom": "latest"
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0"
   }
 }

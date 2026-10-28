@@ -108,7 +108,7 @@ Interactive streaming systems need two kinds of safety: gameplay safety and inte
 
 ## Testing instructions for judges
 
-Requirements: Node.js 22+, pnpm 10+, a Twitch developer application, a Twitch broadcaster account, and an OpenAI API key.
+Requirements: Node.js 22.12+, pnpm 10+, a Twitch developer application, a Twitch broadcaster account, and an OpenAI API key.
 
 1. Clone the repository.
 2. Run `pnpm install`.
