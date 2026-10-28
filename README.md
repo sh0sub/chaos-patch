@@ -2,7 +2,7 @@
 
 **Chaos Patch**: Twitch chat writes the patch notes and AI live-patches the game, round after round, on stream.
 
-Built for the Codex x TwitchCon Hackathon (deadline 2026-11-02 PST). Developed in a single Codex thread; session ID submitted with the entry.
+Built for the Codex x TwitchCon Hackathon (deadline November 2, 2026 at 2:00 PM Pacific Time). Developed in a single Codex thread; session ID submitted with the entry.
 
 - Play 60s, propose 30s, vote 20s, apply 5s. Chat is the game designer.
 - Twitch EventSub WebSocket chat in, Helix chat out, OBS browser-source overlay
@@ -33,6 +33,8 @@ This runs strict TypeScript checks, unit tests, and the production build across 
 D1 vertical slice verified on 2026-10-27: Twitch OAuth, EventSub chat receive, Helix chat send, OpenAI structured patch compilation, and live game patch application all work locally.
 
 D6 resilience verified on 2026-10-28: concurrent Twitch operations share one token refresh, and the dashboard reconnects its state WebSocket after an actual local server restart without a browser reload.
+
+D7 preparation verified on 2026-10-28: the full project gate passes with 24 tests; a real Twitch proposal and vote returned through EventSub and shipped BUILD v3 through `gpt-4o-mini`. A final controlled Marker retry remained externally blocked by Twitch `VOD_NOT_READY`, so further Marker retries are out of scope for the main recording. See `docs/demo-runbook.md` for the 25-minute session and three-minute edit plan.
 
 ## License
 
