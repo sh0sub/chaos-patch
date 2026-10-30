@@ -63,6 +63,9 @@ h2 { margin:0; font-size:28px; letter-spacing:-.04em; }
 .obs-source a { color:var(--cyan); font-size:11px; text-decoration:none; }
 .obs-source code { display:block; overflow:hidden; margin:10px 0; color:#b8b8c2; text-overflow:ellipsis; white-space:nowrap; font-size:10px; }
 .obs-source button, .save-settings, .pause-button { min-height:48px; width:100%; border:1px solid var(--line); border-radius:9px; color:#efeff1; background:#202024; cursor:pointer; font-weight:700; }
+.obs-source > .obs-copy-row { display:grid; grid-template-columns:1fr auto; align-items:center; gap:12px; }
+.obs-copy-row small { color:#85858d; font:700 10px "JetBrains Mono"; white-space:nowrap; }
+.obs-copy-row small.live { color:var(--lime); }
 .session-settings { display:grid; gap:10px; padding:16px 0 4px; }
 .settings-title { display:flex; align-items:center; justify-content:space-between; }
 .settings-title b { color:var(--lime); font:700 10px "JetBrains Mono"; }

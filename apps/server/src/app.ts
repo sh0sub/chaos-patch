@@ -5,6 +5,7 @@ import { sessionSettingsSchema, type Candidate, type PatchV1, type Proposal, typ
 import { compressProposalsFallback } from "./candidateCompressor";
 import { RoundStore } from "./round";
 import type { TwitchChatMessage, TwitchEmote, TwitchStatus } from "./twitch";
+import { BrowserClientRegistry } from "./browserClients";
 
 export type TwitchPort = {
   on(event: "chat", listener: (message: TwitchChatMessage) => void): unknown;
@@ -67,7 +68,7 @@ type ServerOptions = {
 export function createChaosPatchServer(options: ServerOptions) {
   const app = Fastify({ logger: process.env.NODE_ENV !== "test" });
   const rounds = new RoundStore();
-  const browserClients = new Set<WebSocket>();
+  const browserClients = new BrowserClientRegistry<WebSocket>();
   const oauthStates = new Map<string, number>();
   const compressProposals = options.compressProposals ?? (async (proposals: Proposal[]) => compressProposalsFallback(proposals));
   let compilePromise: Promise<CompileResult> | null = null;
@@ -102,7 +103,7 @@ export function createChaosPatchServer(options: ServerOptions) {
 
   function broadcast(type: string, payload: unknown): void {
     const message = JSON.stringify({ type, payload });
-    for (const client of browserClients) {
+    for (const client of browserClients.clients) {
       if (client.readyState === WebSocket.OPEN) client.send(message);
     }
   }
@@ -111,7 +112,7 @@ export function createChaosPatchServer(options: ServerOptions) {
     return {
       twitch: options.twitch.status(),
       round: rounds.snapshot(),
-      session: { paused, settings: rounds.settingsSnapshot(), filteredCount }
+      session: { paused, settings: rounds.settingsSnapshot(), filteredCount, overlayClients: browserClients.overlayCount }
     };
   }
 
@@ -390,18 +391,22 @@ export function createChaosPatchServer(options: ServerOptions) {
   timer.unref();
 
   const wsServer = new WebSocketServer({ noServer: true });
-  wsServer.on("connection", (socket) => {
-    browserClients.add(socket);
+  wsServer.on("connection", (socket, request) => {
+    browserClients.add(socket, request.url);
     socket.send(JSON.stringify({ type: "state:snapshot", payload: snapshotPayload() }));
-    socket.on("close", () => browserClients.delete(socket));
+    broadcastSnapshot();
+    socket.on("close", () => {
+      browserClients.delete(socket);
+      broadcastSnapshot();
+    });
   });
   app.server.on("upgrade", (request, socket, head) => {
-    if (request.url !== "/ws") return socket.destroy();
+    if (new URL(request.url ?? "", "http://localhost").pathname !== "/ws") return socket.destroy();
     wsServer.handleUpgrade(request, socket, head, (client) => wsServer.emit("connection", client, request));
   });
   app.addHook("onClose", async () => {
     clearInterval(timer);
-    for (const client of browserClients) client.terminate();
+    for (const client of browserClients.clients) client.terminate();
   });
 
   return app;

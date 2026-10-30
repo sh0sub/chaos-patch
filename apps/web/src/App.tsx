@@ -5,13 +5,14 @@ import { GameCanvas } from "./components/GameCanvas";
 import { chatLinePresentation, type ChatWireLine } from "./chatWire";
 import { buildEmoteCatalog, type TwitchEmoteAsset } from "./gameVisuals";
 import { markerStatus } from "./marker";
+import { overlayConnectionLabel } from "./overlayConnection";
 import { recapMetrics, type SessionRecap } from "./recap";
 import { overlaySourceUrl, parseBlockedTerms } from "./sessionControls";
 import { compileErrorFromSocketMessage, connectStateSocket } from "./stateSocket";
 import { twitchStatusPresentation, type TwitchEventSubStatus } from "./twitchStatus";
 
 type TwitchStatus = { authenticated: boolean; eventSub: TwitchEventSubStatus; user: { display_name: string; profile_image_url: string } | null; error: string | null };
-type Snapshot = { twitch: TwitchStatus; round: BroadcastState; session: { paused: boolean; settings: SessionSettings; filteredCount: number } };
+type Snapshot = { twitch: TwitchStatus; round: BroadcastState; session: { paused: boolean; settings: SessionSettings; filteredCount: number; overlayClients: number } };
 type ChatLine = ReturnType<typeof chatLinePresentation>;
 type PatchEvent = { kind: "applied" | "rolled_back"; patch: PatchV1; automatic?: boolean };
 type RollbackEvent = { patch: PatchV1; reason: string };
@@ -20,7 +21,7 @@ type MarkerResult = { id: string; createdAt: string; positionSeconds: number; de
 const empty: Snapshot = {
   twitch: { authenticated: false, eventSub: "disconnected", user: null, error: null },
   round: { round: 0, version: 1, phase: "idle", remainingSeconds: 0, proposals: [], candidates: [], activePatch: null, patchHistory: [] },
-  session: { paused: false, settings: defaultSessionSettings, filteredCount: 0 }
+  session: { paused: false, settings: defaultSessionSettings, filteredCount: 0, overlayClients: 0 }
 };
 const emptyRecap: SessionRecap = { round: 0, build: 1, applied: 0, rolledBack: 0, activePatch: null, recent: [] };
 
@@ -48,7 +49,7 @@ export function App() {
   useEffect(() => {
     fetch("/api/status").then((response) => response.json()).then(setSnapshot).catch(() => undefined);
     const protocol = location.protocol === "https:" ? "wss:" : "ws:";
-    return connectStateSocket(`${protocol}//${location.host}/ws`, (data) => {
+    return connectStateSocket(`${protocol}//${location.host}/ws?surface=${isBroadcastOverlay ? "overlay" : "dashboard"}`, (data) => {
       const compileFailure = compileErrorFromSocketMessage(data);
       if (compileFailure) {
         setCompileError(compileFailure);
@@ -211,7 +212,10 @@ export function App() {
           <div className="obs-source">
             <div><span>02 · OBS SOURCE</span><a href="/overlay" target="_blank" rel="noreferrer">Open overlay ↗</a></div>
             <code>{obsUrl}</code>
-            <button type="button" onClick={() => void copyObsUrl()}>{obsCopied ? "Copied" : "Copy OBS URL"}</button>
+            <div className="obs-copy-row">
+              <button type="button" onClick={() => void copyObsUrl()}>{obsCopied ? "Copied" : "Copy OBS URL"}</button>
+              <small className={snapshot.session.overlayClients > 0 ? "live" : "waiting"}>{overlayConnectionLabel(snapshot.session.overlayClients)}</small>
+            </div>
           </div>
           <div className="session-settings">
             <div className="settings-title"><span>03 · SESSION</span><b>{settingsDraft.playSeconds}s PLAY</b></div>
