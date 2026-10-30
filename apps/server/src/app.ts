@@ -103,6 +103,23 @@ export function createChaosPatchServer(options: ServerOptions) {
     announce("vote", round.round, `${choices} — type 1, 2 or 3`);
   }
 
+  async function createApplyClipAndAnnounce(
+    round: ReturnType<RoundStore["snapshot"]>,
+    patch: PatchV1,
+    votes: number
+  ): Promise<void> {
+    const result = `v${patch.version} applied: ${patch.title} — proposed by @${patch.proposer} (${votes} votes)`;
+    try {
+      const clip = await options.twitch.createClip(`Chaos Patch · Round ${round.round} · BUILD v${patch.version}`);
+      announce("apply", round.round, `${result} — ${clip.editUrl}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const unavailable = /\b(?:403|404)\b|not authorized|must be live/i.test(message);
+      if (!unavailable) app.log.warn(error, "Automatic Twitch clip creation failed");
+      announce("apply", round.round, result);
+    }
+  }
+
   function broadcast(type: string, payload: unknown): void {
     const message = JSON.stringify({ type, payload });
     for (const client of browserClients.clients) {
@@ -359,11 +376,7 @@ export function createChaosPatchServer(options: ServerOptions) {
       }
       telemetry.recordCompile(performance.now() - compileStartedAt);
       const round = rounds.apply(patch);
-      announce(
-        "apply",
-        round.round,
-        `v${patch.version} applied: ${patch.title} — proposed by @${patch.proposer} (${winner.votes} votes)`
-      );
+      void createApplyClipAndAnnounce(round, patch, winner.votes);
       broadcast("patch:applied", patch);
       broadcastSnapshot();
       const result = { patch, round };

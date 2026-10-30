@@ -43,6 +43,17 @@ class FailingChatTwitch extends FakeTwitch {
   }
 }
 
+class UnavailableClipTwitch extends FakeTwitch {
+  constructor(private readonly statusCode: 403 | 404) {
+    super();
+  }
+
+  override async createClip(title: string): Promise<{ id: string; editUrl: string }> {
+    this.clipTitles.push(title);
+    throw new Error(`Twitch clip creation failed (${this.statusCode})`);
+  }
+}
+
 const patch: PatchV1 = {
   version: 2,
   title: "Test Patch",
@@ -235,8 +246,56 @@ describe("Chaos Patch HTTP server", () => {
     expect(twitch.chatMessages).toEqual([
       "PATCH PITCH (30s) — !patch <your idea> to change the game. Current v1",
       "1) Giant Emotes 2) Mirror Controls 3) Lava Floor — type 1, 2 or 3",
-      "v2 applied: Test Patch — proposed by @viewer (1 votes)"
+      "v2 applied: Test Patch — proposed by @viewer (1 votes) — https://clips.twitch.tv/clip-1/edit"
     ]);
+    await server.close();
+  });
+
+  it("creates a clip on APPLY and includes its URL in the result announcement", async () => {
+    const twitch = new FakeTwitch();
+    const server = createChaosPatchServer({
+      twitch,
+      compileCandidate: async () => patch,
+      sessionSecret: "test-session-secret-that-is-at-least-32-characters",
+      webOrigin: "http://localhost:5173",
+      tickMilliseconds: 10_000
+    });
+
+    await server.inject({ method: "POST", url: "/api/session/start" });
+    await server.inject({ method: "POST", url: "/api/session/advance" });
+    await server.inject({ method: "POST", url: "/api/session/advance" });
+    await server.inject({ method: "POST", url: "/api/mock/chat", payload: { userName: "voter", message: "1" } });
+    const applied = await server.inject({ method: "POST", url: "/api/session/compile" });
+    await waitFor(() => twitch.chatMessages.length === 3);
+
+    expect(applied.statusCode).toBe(200);
+    expect(twitch.clipTitles).toEqual(["Chaos Patch · Round 1 · BUILD v2"]);
+    expect(twitch.chatMessages.at(-1)).toBe(
+      "v2 applied: Test Patch — proposed by @viewer (1 votes) — https://clips.twitch.tv/clip-1/edit"
+    );
+    await server.close();
+  });
+
+  it.each([403, 404] as const)("keeps APPLY successful when automatic clip creation returns %s", async (status) => {
+    const twitch = new UnavailableClipTwitch(status);
+    const server = createChaosPatchServer({
+      twitch,
+      compileCandidate: async () => patch,
+      sessionSecret: "test-session-secret-that-is-at-least-32-characters",
+      webOrigin: "http://localhost:5173",
+      tickMilliseconds: 10_000
+    });
+
+    await server.inject({ method: "POST", url: "/api/session/start" });
+    await server.inject({ method: "POST", url: "/api/session/advance" });
+    await server.inject({ method: "POST", url: "/api/session/advance" });
+    await server.inject({ method: "POST", url: "/api/mock/chat", payload: { userName: "voter", message: "1" } });
+    const applied = await server.inject({ method: "POST", url: "/api/session/compile" });
+    await waitFor(() => twitch.chatMessages.length === 3);
+
+    expect(applied.statusCode).toBe(200);
+    expect(twitch.clipTitles).toEqual(["Chaos Patch · Round 1 · BUILD v2"]);
+    expect(twitch.chatMessages.at(-1)).toBe("v2 applied: Test Patch — proposed by @viewer (1 votes)");
     await server.close();
   });
 
