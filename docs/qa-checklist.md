@@ -38,7 +38,7 @@ Work top-down. Add or update a focused test before each fix, keep `pnpm check` g
 - [x] Overlay connection status: count WS clients on `/overlay` and show `Overlay: waiting… / live (n clients)` next to the Copy button.
 - [x] M2 status bar (56 px): round · phase timer · version · chat msgs/min · LLM latency (last compile ms). Chat rate and LLM latency are not tracked today.
 - [x] Patch history rows: hover/expand shows the knob diff (`- obstacle.scale 1.0` / `+ obstacle.scale 2.6`) and a `Safety guard 4/4` strip (schema strict · allowed knobs · blocked terms · rollback watch).
-- [ ] Force rollback should require a 1 s press-and-hold; it is a plain click now.
+- [x] Force rollback should require a 1 s press-and-hold; it is a plain click now.
 - [ ] Intensity segment buttons are 42 px tall; design minimum control height is 48 px.
 - [ ] `docs/design.md` typography floor is 12 px; `styles.css` has ~30 declarations at 9–11 px (eyebrows, panel heads, mono labels, patch-note codes). Raise to 12 px or update the contract.
 - [ ] Line color is split between `#2a2a2e` (overlay) and `#34343a` (dashboard `--line`); pick one token.

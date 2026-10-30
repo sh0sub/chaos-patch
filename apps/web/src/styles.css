@@ -103,7 +103,10 @@ h2 { margin:0; font-size:28px; letter-spacing:-.04em; }
 .mock-form div { display:grid; grid-template-columns:1fr 48px; }
 .mock-form input { min-width:0; height:48px; padding:0 12px; color:#fff; background:#202024; border:1px solid var(--line); border-radius:8px 0 0 8px; }
 .mock-form button { border:0; border-radius:0 8px 8px 0; background:#efeff1; color:#111; cursor:pointer; }
-.rollback-button { min-height:48px; width:100%; margin-top:12px; border:1px solid #633047; border-radius:9px; color:#ff8fc8; background:transparent; cursor:pointer; font-weight:700; }
+.rollback-button { position:relative; min-height:48px; width:100%; overflow:hidden; margin-top:12px; border:1px solid #633047; border-radius:9px; color:#ff8fc8; background:transparent; cursor:pointer; font-weight:700; }
+.rollback-button::after { position:absolute; inset:0; width:0; content:""; background:#633047; }
+.rollback-button.holding::after { animation:rollback-hold-fill 1s linear forwards; }
+.rollback-button span { position:relative; z-index:1; }
 .rollback-button:disabled { opacity:.55; }
 .marker-button { min-height:48px; width:100%; margin-top:12px; border:1px solid var(--line); border-radius:9px; color:#efeff1; background:#202024; cursor:pointer; font-weight:700; }
 .marker-button:disabled { opacity:.55; }
@@ -253,6 +256,7 @@ code { font-family:"JetBrains Mono", monospace; }
 @keyframes apply-slide-in { from { transform:translate(-50%, calc(-50% + 72px)) scale(.94); } to { transform:translate(-50%, -50%) scale(1); } }
 @keyframes apply-hold-fade { 0%, 87.5% { opacity:1; } 100% { opacity:0; } }
 @keyframes rollback-frame-flash { 0%, 55% { border-color:var(--pink); box-shadow:inset 0 0 0 5px var(--pink), 0 0 36px rgba(255,61,166,.7); } 100% { border-color:#2a2a2e; box-shadow:inset 0 0 0 1px rgba(255,255,255,.02); } }
+@keyframes rollback-hold-fill { from { width:0; } to { width:100%; } }
 @keyframes vote-countdown-pulse { from { transform:scale(1); } to { transform:scale(1.15); } }
 @keyframes overlay-enter { from { opacity:0; transform:translate(-50%, -46%) scale(.98); } to { opacity:1; transform:translate(-50%, -50%) scale(1); } }
 @media (max-width: 900px) { .workspace { grid-template-columns:1fr; } .control-panel { border-left:0; border-top:1px solid var(--line); } .feed-grid { grid-template-columns:1fr; } .chat-log { border-left:0; padding-left:0; } }

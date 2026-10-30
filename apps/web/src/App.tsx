@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { defaultSessionSettings, type BroadcastState, type PatchV1, type SessionSettings } from "@chaos-patch/schema";
 import { BroadcastOverlay } from "./components/BroadcastOverlay";
 import { GameCanvas } from "./components/GameCanvas";
+import { HoldRollbackButton } from "./components/HoldRollbackButton";
 import { chatLinePresentation, type ChatWireLine } from "./chatWire";
 import { buildEmoteCatalog, type TwitchEmoteAsset } from "./gameVisuals";
 import { markerStatus } from "./marker";
@@ -288,7 +289,7 @@ export function App() {
           </form>
           {snapshot.twitch.authenticated && <button className="marker-button" disabled={busy} onClick={() => void createMarker()}>Save Twitch stream marker</button>}
           {marker && <p className="marker-result" role="status">{markerStatus(marker)} · private in Video Producer</p>}
-          {snapshot.round.activePatch && <button className="rollback-button" disabled={busy} onClick={() => void action("/api/session/rollback", { version: snapshot.round.activePatch?.version, reason: "manual" })}>Rollback active patch</button>}
+          {snapshot.round.activePatch && <HoldRollbackButton disabled={busy} onConfirm={() => void action("/api/session/rollback", { version: snapshot.round.activePatch?.version, reason: "manual" })} />}
           {error && <p className="error-message" role="alert">{error}</p>}
           <p className="fineprint">Scripted demo needs no Twitch account. Manual mock input is for rehearsal only; live mode listens through EventSub WebSockets.</p>
         </aside>
