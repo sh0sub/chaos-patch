@@ -1,17 +1,20 @@
 import { randomUUID } from "node:crypto";
 import {
   candidateSchema,
+  defaultSessionSettings,
   patchSchema,
   proposalSchema,
+  sessionSettingsSchema,
   type BroadcastState,
   type Candidate,
   type PatchV1,
   type Proposal,
-  type RoundPhase
+  type RoundPhase,
+  type SessionSettings
 } from "@chaos-patch/schema";
 
 const phases: RoundPhase[] = ["play", "pitch", "vote", "compile", "apply"];
-const phaseSeconds: Record<RoundPhase, number> = {
+const defaultPhaseSeconds: Record<RoundPhase, number> = {
   idle: 0,
   play: 60,
   pitch: 30,
@@ -21,6 +24,7 @@ const phaseSeconds: Record<RoundPhase, number> = {
 };
 
 export class RoundStore {
+  private settings: SessionSettings = structuredClone(defaultSessionSettings);
   private state: BroadcastState = {
     round: 0,
     version: 1,
@@ -36,17 +40,26 @@ export class RoundStore {
     return structuredClone(this.state);
   }
 
+  settingsSnapshot(): SessionSettings {
+    return structuredClone(this.settings);
+  }
+
+  configure(settings: SessionSettings): SessionSettings {
+    this.settings = sessionSettingsSchema.parse(settings);
+    return this.settingsSnapshot();
+  }
+
   start(): BroadcastState {
     this.state = {
       ...this.state,
       round: Math.max(1, this.state.round || 1),
       phase: "play",
-      remainingSeconds: phaseSeconds.play
+      remainingSeconds: this.phaseSeconds("play")
     };
     return this.snapshot();
   }
 
-  advance(): BroadcastState {
+  advance(voteCandidates?: Candidate[]): BroadcastState {
     const currentIndex = phases.indexOf(this.state.phase);
     const nextPhase = currentIndex < 0 || currentIndex === phases.length - 1 ? "play" : phases[currentIndex + 1]!;
     const startsNewRound = this.state.phase === "apply" || this.state.phase === "idle";
@@ -54,9 +67,13 @@ export class RoundStore {
       ...this.state,
       round: startsNewRound ? Math.max(1, this.state.round + 1) : this.state.round,
       phase: nextPhase,
-      remainingSeconds: phaseSeconds[nextPhase],
+      remainingSeconds: this.phaseSeconds(nextPhase),
       proposals: nextPhase === "play" ? [] : this.state.proposals,
-      candidates: nextPhase === "play" ? [] : nextPhase === "vote" ? this.buildCandidates() : this.state.candidates
+      candidates: nextPhase === "play"
+        ? []
+        : nextPhase === "vote"
+          ? (voteCandidates ?? this.buildCandidates()).map((candidate) => candidateSchema.parse(candidate))
+          : this.state.candidates
     };
     return this.snapshot();
   }
@@ -64,6 +81,8 @@ export class RoundStore {
   addProposal(userId: string, userName: string, text: string): Proposal | null {
     const normalized = text.replace(/^!(patch|idea)\s+/i, "").trim();
     if (!normalized || normalized.length > 120 || this.state.phase !== "pitch") return null;
+    const normalizedLower = normalized.toLocaleLowerCase();
+    if (this.settings.blockedTerms.some((term) => normalizedLower.includes(term.toLocaleLowerCase()))) return null;
     const proposal = proposalSchema.parse({
       id: randomUUID(),
       userId,
@@ -94,7 +113,7 @@ export class RoundStore {
       ...this.state,
       version: safePatch.version,
       phase: "apply",
-      remainingSeconds: phaseSeconds.apply,
+      remainingSeconds: this.phaseSeconds("apply"),
       activePatch: safePatch,
       patchHistory: [{ ...safePatch, status: "applied" }, ...this.state.patchHistory]
     };
@@ -124,7 +143,7 @@ export class RoundStore {
     this.state = {
       ...this.state,
       phase: "apply",
-      remainingSeconds: phaseSeconds.apply,
+      remainingSeconds: this.phaseSeconds("apply"),
       activePatch,
       patchHistory
     };
@@ -146,17 +165,21 @@ export class RoundStore {
       this.state.remainingSeconds = 0;
       return null;
     }
+    if (this.state.phase === "pitch") {
+      this.state.remainingSeconds = 0;
+      return "pitch";
+    }
     const expiredPhase = this.state.phase;
     if (expiredPhase === "vote") {
       if (this.winner()) {
         this.state.phase = "compile";
-        this.state.remainingSeconds = phaseSeconds.compile;
+        this.state.remainingSeconds = this.phaseSeconds("compile");
       } else {
         this.state = {
           ...this.state,
           round: this.state.round + 1,
           phase: "play",
-          remainingSeconds: phaseSeconds.play,
+          remainingSeconds: this.phaseSeconds("play"),
           proposals: [],
           candidates: []
         };
@@ -169,6 +192,10 @@ export class RoundStore {
   }
 
   private readonly votesByUser = new Map<string, number>();
+
+  private phaseSeconds(phase: RoundPhase): number {
+    return phase === "play" ? this.settings.playSeconds : defaultPhaseSeconds[phase];
+  }
 
   private buildCandidates(): Candidate[] {
     this.votesByUser.clear();

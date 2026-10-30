@@ -91,7 +91,7 @@ Another useful failure was a no-participant round that could have triggered an u
 - The applied patch visibly changes the game without deploying new frontend code.
 - Unsafe patches can roll back automatically while preserving a clear recap trail.
 - The same interface works as a desktop control room, mobile dashboard, and OBS overlay.
-- The project gate currently passes strict type checking, 24 automated tests, and a production build.
+- The project gate currently passes strict type checking, 53 automated tests, and a production build.
 - Raw evidence captures are kept outside Git, while the repository contains reproducible tests and clear setup instructions.
 
 ## What we learned

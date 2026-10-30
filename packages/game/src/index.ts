@@ -104,7 +104,14 @@ export function stepGame(state: GameState, rawDeltaSeconds: number, input: GameI
   const obstacles = state.obstacles.map((obstacle) => {
     const homingDirection = Math.sign(player.x - obstacle.x);
     const homing = homingDirection * 90 * state.params.obstacleHoming;
-    const velocityXNext = obstacle.velocityX + (state.params.wind * 30 + homing) * deltaSeconds;
+    let velocityXNext = obstacle.velocityX + (state.params.wind * 30 + homing) * deltaSeconds;
+    const rawX = obstacle.x + velocityXNext * deltaSeconds;
+    if (
+      state.params.bounce > 0 &&
+      ((rawX <= obstacle.radius && velocityXNext < 0) || (rawX >= state.width - obstacle.radius && velocityXNext > 0))
+    ) {
+      velocityXNext *= -(0.6 + state.params.bounce * 0.4);
+    }
     return {
       ...obstacle,
       x: clamp(obstacle.x + velocityXNext * deltaSeconds, obstacle.radius, state.width - obstacle.radius),

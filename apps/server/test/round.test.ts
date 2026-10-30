@@ -10,6 +10,40 @@ const patch = (version: number, title: string) => ({
 });
 
 describe("RoundStore", () => {
+  it("uses the configured PLAY duration for the next round", () => {
+    const store = new RoundStore();
+
+    store.configure({ intensity: "mild", playSeconds: 75, blockedTerms: [] });
+
+    expect(store.start()).toMatchObject({ phase: "play", remainingSeconds: 75 });
+    expect(store.settingsSnapshot()).toEqual({ intensity: "mild", playSeconds: 75, blockedTerms: [] });
+  });
+
+  it("filters pitch ideas that contain a configured blocked term", () => {
+    const store = new RoundStore();
+    store.configure({ intensity: "spicy", playSeconds: 60, blockedTerms: ["private info"] });
+    store.start();
+    store.advance();
+
+    expect(store.addProposal("1", "viewer", "!patch show private info")).toBeNull();
+    expect(store.addProposal("2", "viewer", "!patch giant emotes")?.text).toBe("giant emotes");
+  });
+
+  it("enters vote with candidates compressed from the current pitch", () => {
+    const store = new RoundStore();
+    store.start();
+    store.advance();
+    store.addProposal("1", "viewer", "!patch giant emotes");
+    const compressed = [
+      { id: "ai-1", title: "Emote Storm", description: "Kappa rain gets huge", proposer: "viewer", difficulty: "chaos" as const, votes: 0 }
+    ];
+
+    const vote = store.advance(compressed);
+
+    expect(vote.phase).toBe("vote");
+    expect(vote.candidates).toEqual(compressed);
+  });
+
   it("runs through play, pitch and vote with proposals", () => {
     const store = new RoundStore();
     expect(store.start().phase).toBe("play");
@@ -26,6 +60,8 @@ describe("RoundStore", () => {
     for (let index = 0; index < 60; index += 1) store.tick();
     expect(store.snapshot().phase).toBe("pitch");
     for (let index = 0; index < 30; index += 1) store.tick();
+    expect(store.snapshot()).toMatchObject({ phase: "pitch", remainingSeconds: 0 });
+    store.advance();
     expect(store.snapshot().phase).toBe("vote");
     for (let index = 0; index < 20; index += 1) store.tick();
     expect(store.snapshot().phase).toBe("play");

@@ -43,6 +43,12 @@ export type TwitchChatMessage = {
   sentAt: string;
 };
 
+export type TwitchEmote = {
+  id: string;
+  name: string;
+  url: string;
+};
+
 const AUTHORIZATION_URL = "https://id.twitch.tv/oauth2/authorize";
 const TOKEN_URL = "https://id.twitch.tv/oauth2/token";
 const API_URL = "https://api.twitch.tv/helix";
@@ -190,6 +196,41 @@ export class TwitchClient extends EventEmitter {
     });
 
     if (!response.ok) throw new Error(`Twitch chat send failed (${response.status})`);
+  }
+
+  async listEmotes(): Promise<TwitchEmote[]> {
+    const auth = await this.requireFreshAuth();
+    const headers = {
+      Authorization: `Bearer ${auth.access_token}`,
+      "Client-Id": this.config.clientId
+    };
+    const readEmotes = async (url: string): Promise<TwitchEmote[]> => {
+      const response = await fetch(url, { headers });
+      if (!response.ok) throw new Error(`Twitch emote lookup failed (${response.status})`);
+      const payload = (await response.json()) as {
+      data?: Array<{ id?: string; name?: string }>;
+      template?: string;
+      };
+      const template = payload.template;
+      if (!template) return [];
+      return (payload.data ?? []).flatMap((emote) => {
+        if (!emote.id || !emote.name) return [];
+        return [{
+          id: emote.id,
+          name: emote.name,
+          url: template
+            .replace("{{id}}", emote.id)
+            .replace("{{format}}", "default")
+            .replace("{{theme_mode}}", "dark")
+            .replace("{{scale}}", "3.0")
+        }];
+      });
+    };
+    const [channelEmotes, globalEmotes] = await Promise.all([
+      readEmotes(`${API_URL}/chat/emotes?broadcaster_id=${encodeURIComponent(auth.user.id)}`),
+      readEmotes(`${API_URL}/chat/emotes/global`)
+    ]);
+    return [...channelEmotes, ...globalEmotes];
   }
 
   async createClip(title: string): Promise<{ id: string; editUrl: string }> {

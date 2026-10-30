@@ -61,11 +61,24 @@ export const proposalSchema = z
 
 export const roundPhaseSchema = z.enum(["idle", "play", "pitch", "vote", "compile", "apply"]);
 
+export const sessionSettingsSchema = z.object({
+  intensity: z.enum(["mild", "spicy", "chaos"]),
+  playSeconds: z.number().int().min(45).max(90),
+  blockedTerms: z.array(z.string().trim().min(1).max(24)).max(5)
+}).strict();
+
 export type PatchParams = z.infer<typeof patchParamsSchema>;
 export type PatchV1 = z.infer<typeof patchSchema>;
 export type Candidate = z.infer<typeof candidateSchema>;
 export type Proposal = z.infer<typeof proposalSchema>;
 export type RoundPhase = z.infer<typeof roundPhaseSchema>;
+export type SessionSettings = z.infer<typeof sessionSettingsSchema>;
+
+export const defaultSessionSettings: SessionSettings = {
+  intensity: "spicy",
+  playSeconds: 60,
+  blockedTerms: ["personal data", "self-harm", "gambling"]
+};
 
 export type BroadcastState = {
   round: number;

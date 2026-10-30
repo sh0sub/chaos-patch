@@ -1,4 +1,5 @@
 import { createChaosPatchServer } from "./app";
+import { compressProposals } from "./candidateCompressor";
 import { compileCandidate } from "./compiler";
 import { env } from "./env";
 import { TwitchClient } from "./twitch";
@@ -10,6 +11,7 @@ const app = createChaosPatchServer({
     redirectUri: env.TWITCH_REDIRECT_URI
   }),
   compileCandidate,
+  compressProposals,
   sessionSecret: env.SESSION_SECRET,
   webOrigin: env.WEB_ORIGIN
 });

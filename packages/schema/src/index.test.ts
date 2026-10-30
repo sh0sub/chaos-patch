@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { patchSchema } from "./index";
+import { patchSchema, sessionSettingsSchema } from "./index";
 
 describe("patchSchema", () => {
   it("accepts a safe bounded patch", () => {
@@ -24,5 +24,21 @@ describe("patchSchema", () => {
         params: { obstacleScale: 99 }
       })
     ).toThrow();
+  });
+});
+
+describe("sessionSettingsSchema", () => {
+  it("accepts bounded broadcast settings and rejects unsafe ranges", () => {
+    expect(sessionSettingsSchema.parse({
+      intensity: "spicy",
+      playSeconds: 75,
+      blockedTerms: ["personal data", "gambling"]
+    })).toEqual({ intensity: "spicy", playSeconds: 75, blockedTerms: ["personal data", "gambling"] });
+
+    expect(() => sessionSettingsSchema.parse({
+      intensity: "chaos",
+      playSeconds: 10,
+      blockedTerms: []
+    })).toThrow();
   });
 });

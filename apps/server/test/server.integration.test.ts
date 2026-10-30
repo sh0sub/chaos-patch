@@ -8,6 +8,7 @@ class FakeTwitch extends EventEmitter implements TwitchPort {
   connectCalls = 0;
   clipTitles: string[] = [];
   markerDescriptions: string[] = [];
+  emotes = [{ id: "25", name: "Kappa", url: "https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/3.0" }];
   authorizationUrl(_state: string) { return "https://example.test/oauth"; }
   async exchangeCode(code: string) {
     this.exchangeCodes.push(code);
@@ -15,6 +16,7 @@ class FakeTwitch extends EventEmitter implements TwitchPort {
   }
   async connectEventSub() { this.connectCalls += 1; }
   async sendChatMessage() {}
+  async listEmotes() { return this.emotes; }
   async createClip(title: string) {
     this.clipTitles.push(title);
     return { id: "clip-1", editUrl: "https://clips.twitch.tv/clip-1/edit" };
@@ -42,6 +44,135 @@ const patch: PatchV1 = {
 };
 
 describe("Chaos Patch HTTP server", () => {
+  it("applies validated session settings through the HTTP interface", async () => {
+    const server = createChaosPatchServer({
+      twitch: new FakeTwitch(),
+      compileCandidate: async () => patch,
+      sessionSecret: "test-session-secret-that-is-at-least-32-characters",
+      webOrigin: "http://localhost:5173",
+      tickMilliseconds: 10_000
+    });
+
+    const configured = await server.inject({
+      method: "POST",
+      url: "/api/session/settings",
+      payload: { intensity: "mild", playSeconds: 75, blockedTerms: ["private info"] }
+    });
+    const started = await server.inject({ method: "POST", url: "/api/session/start" });
+
+    expect(configured.statusCode).toBe(200);
+    expect(configured.json()).toEqual({ settings: { intensity: "mild", playSeconds: 75, blockedTerms: ["private info"] } });
+    expect(started.json().round).toMatchObject({ phase: "play", remainingSeconds: 75 });
+    await server.close();
+  });
+
+  it("pauses the round timer without losing the current phase", async () => {
+    const server = createChaosPatchServer({
+      twitch: new FakeTwitch(),
+      compileCandidate: async () => patch,
+      sessionSecret: "test-session-secret-that-is-at-least-32-characters",
+      webOrigin: "http://localhost:5173",
+      tickMilliseconds: 2
+    });
+    await server.inject({ method: "POST", url: "/api/session/start" });
+    const paused = await server.inject({ method: "POST", url: "/api/session/pause", payload: { paused: true } });
+    const beforeWait = await server.inject({ method: "GET", url: "/api/status" });
+
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    const status = await server.inject({ method: "GET", url: "/api/status" });
+    expect(paused.statusCode).toBe(200);
+    expect(paused.json()).toMatchObject({ paused: true });
+    expect(status.json()).toMatchObject({ session: { paused: true }, round: { phase: "play" } });
+    expect(status.json().round.remainingSeconds).toBe(beforeWait.json().round.remainingSeconds);
+    await server.close();
+  });
+
+  it("compresses the full pitch into audience-ready candidates before vote", async () => {
+    const seen: string[][] = [];
+    const server = createChaosPatchServer({
+      twitch: new FakeTwitch(),
+      compileCandidate: async () => patch,
+      compressProposals: async (proposals) => {
+        seen.push(proposals.map(({ text }) => text));
+        return [{
+          id: "compressed-1",
+          title: "Emote Storm",
+          description: "Giant Kappas fall together",
+          proposer: "viewer",
+          difficulty: "chaos",
+          votes: 0
+        }];
+      },
+      sessionSecret: "test-session-secret-that-is-at-least-32-characters",
+      webOrigin: "http://localhost:5173",
+      tickMilliseconds: 10_000
+    });
+    await server.inject({ method: "POST", url: "/api/session/start" });
+    await server.inject({ method: "POST", url: "/api/session/advance" });
+    await server.inject({ method: "POST", url: "/api/mock/chat", payload: { userName: "viewer", message: "!patch giant emotes" } });
+
+    const response = await server.inject({ method: "POST", url: "/api/session/advance" });
+
+    expect(response.statusCode).toBe(200);
+    expect(seen).toEqual([["giant emotes"]]);
+    expect(response.json().round).toMatchObject({
+      phase: "vote",
+      candidates: [{ id: "compressed-1", title: "Emote Storm" }]
+    });
+    await server.close();
+  });
+
+  it("runs candidate compression when the timed pitch closes", async () => {
+    let compressCalls = 0;
+    const server = createChaosPatchServer({
+      twitch: new FakeTwitch(),
+      compileCandidate: async () => patch,
+      compressProposals: async () => {
+        compressCalls += 1;
+        return [{
+          id: "timed-1",
+          title: "Timed Candidate",
+          description: "Created after the pitch timer",
+          proposer: "viewer",
+          difficulty: "spicy",
+          votes: 0
+        }];
+      },
+      sessionSecret: "test-session-secret-that-is-at-least-32-characters",
+      webOrigin: "http://localhost:5173",
+      tickMilliseconds: 2
+    });
+    await server.inject({ method: "POST", url: "/api/session/start" });
+    await server.inject({ method: "POST", url: "/api/session/advance" });
+    await server.inject({ method: "POST", url: "/api/mock/chat", payload: { userName: "viewer", message: "!patch giant emotes" } });
+
+    const response = await waitForRoundPhase(server, "vote");
+    expect(compressCalls).toBe(1);
+    expect(response.json().round).toMatchObject({
+      phase: "vote",
+      candidates: [{ id: "timed-1", title: "Timed Candidate" }]
+    });
+    await server.close();
+  });
+
+  it("exposes current Twitch emotes to the game renderer", async () => {
+    const twitch = new FakeTwitch();
+    const server = createChaosPatchServer({
+      twitch,
+      compileCandidate: async () => patch,
+      sessionSecret: "test-session-secret-that-is-at-least-32-characters",
+      webOrigin: "http://localhost:5173",
+      tickMilliseconds: 10_000
+    });
+
+    const response = await server.inject({ method: "GET", url: "/api/twitch/emotes" });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ emotes: twitch.emotes });
+    await server.close();
+  });
+
   it("skips compilation when the vote closes without a chat vote", async () => {
     let compileCalls = 0;
     const server = createChaosPatchServer({
@@ -68,16 +199,24 @@ describe("Chaos Patch HTTP server", () => {
 
   it("compiles a voted proposal once when duplicate requests overlap", async () => {
     let compileCalls = 0;
+    let compileIntensity: string | undefined;
     const server = createChaosPatchServer({
       twitch: new FakeTwitch(),
-      compileCandidate: async () => {
+      compileCandidate: async (_candidate, _version, intensity) => {
         compileCalls += 1;
+        compileIntensity = intensity;
         await new Promise((resolve) => setTimeout(resolve, 20));
         return patch;
       },
       sessionSecret: "test-session-secret-that-is-at-least-32-characters",
       webOrigin: "http://localhost:5173",
       tickMilliseconds: 10_000
+    });
+
+    await server.inject({
+      method: "POST",
+      url: "/api/session/settings",
+      payload: { intensity: "mild", playSeconds: 60, blockedTerms: [] }
     });
 
     await server.inject({ method: "POST", url: "/api/session/start" });
@@ -93,11 +232,47 @@ describe("Chaos Patch HTTP server", () => {
 
     expect(responses.map((response) => response.statusCode)).toEqual([200, 200]);
     expect(compileCalls).toBe(1);
+    expect(compileIntensity).toBe("mild");
     const status = await server.inject({ method: "GET", url: "/api/status" });
     expect(status.json().round).toMatchObject({
       version: 2,
       phase: "apply",
       activePatch: { title: "Test Patch" },
+      patchHistory: [{ version: 2, status: "applied" }]
+    });
+    await server.close();
+  });
+
+  it("returns the same build when a completed round is compiled again", async () => {
+    let compileCalls = 0;
+    const server = createChaosPatchServer({
+      twitch: new FakeTwitch(),
+      compileCandidate: async (_candidate, nextVersion) => {
+        compileCalls += 1;
+        return { ...patch, version: nextVersion };
+      },
+      sessionSecret: "test-session-secret-that-is-at-least-32-characters",
+      webOrigin: "http://localhost:5173",
+      tickMilliseconds: 10_000
+    });
+
+    await server.inject({ method: "POST", url: "/api/session/start" });
+    await server.inject({ method: "POST", url: "/api/session/advance" });
+    await server.inject({ method: "POST", url: "/api/mock/chat", payload: { userName: "viewer", message: "!patch giant emotes" } });
+    await server.inject({ method: "POST", url: "/api/session/advance" });
+    await server.inject({ method: "POST", url: "/api/mock/chat", payload: { userName: "viewer", message: "1" } });
+
+    const first = await server.inject({ method: "POST", url: "/api/session/compile" });
+    const duplicate = await server.inject({ method: "POST", url: "/api/session/compile" });
+    const status = await server.inject({ method: "GET", url: "/api/status" });
+
+    expect(first.statusCode).toBe(200);
+    expect(duplicate.statusCode).toBe(200);
+    expect(duplicate.json().patch.version).toBe(2);
+    expect(compileCalls).toBe(1);
+    expect(status.json().round).toMatchObject({
+      version: 2,
+      phase: "apply",
       patchHistory: [{ version: 2, status: "applied" }]
     });
     await server.close();
@@ -202,3 +377,17 @@ describe("Chaos Patch HTTP server", () => {
     await server.close();
   });
 });
+
+async function waitForRoundPhase(
+  server: ReturnType<typeof createChaosPatchServer>,
+  phase: string,
+  timeoutMilliseconds = 500
+) {
+  const deadline = Date.now() + timeoutMilliseconds;
+  while (Date.now() < deadline) {
+    const response = await server.inject({ method: "GET", url: "/api/status" });
+    if (response.json().round.phase === phase) return response;
+    await new Promise((resolve) => setTimeout(resolve, 1));
+  }
+  throw new Error(`Timed out waiting for round phase ${phase}`);
+}

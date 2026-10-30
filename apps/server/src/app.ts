@@ -1,9 +1,10 @@
 import { createHmac, randomBytes, randomUUID } from "node:crypto";
 import Fastify from "fastify";
 import WebSocket, { WebSocketServer } from "ws";
-import type { Candidate, PatchV1 } from "@chaos-patch/schema";
+import { sessionSettingsSchema, type Candidate, type PatchV1, type Proposal, type SessionSettings } from "@chaos-patch/schema";
+import { compressProposalsFallback } from "./candidateCompressor";
 import { RoundStore } from "./round";
-import type { TwitchChatMessage, TwitchStatus } from "./twitch";
+import type { TwitchChatMessage, TwitchEmote, TwitchStatus } from "./twitch";
 
 export type TwitchPort = {
   on(event: "chat", listener: (message: TwitchChatMessage) => void): unknown;
@@ -12,6 +13,7 @@ export type TwitchPort = {
   exchangeCode(code: string): Promise<unknown>;
   connectEventSub(): Promise<void>;
   sendChatMessage(message: string): Promise<void>;
+  listEmotes(): Promise<TwitchEmote[]>;
   createClip(title: string): Promise<{ id: string; editUrl: string }>;
   createMarker(description: string): Promise<{
     id: string;
@@ -22,11 +24,18 @@ export type TwitchPort = {
   status(): TwitchStatus;
 };
 
-type Compiler = (candidate: Candidate, nextVersion: number) => Promise<PatchV1>;
+type Compiler = (
+  candidate: Candidate,
+  nextVersion: number,
+  intensity: SessionSettings["intensity"]
+) => Promise<PatchV1>;
+type CandidateCompressor = (proposals: Proposal[]) => Promise<Candidate[]>;
+type CompileResult = { patch: PatchV1; round: ReturnType<RoundStore["snapshot"]> };
 
 type ServerOptions = {
   twitch: TwitchPort;
   compileCandidate: Compiler;
+  compressProposals?: CandidateCompressor;
   sessionSecret: string;
   webOrigin: string;
   tickMilliseconds?: number;
@@ -37,7 +46,11 @@ export function createChaosPatchServer(options: ServerOptions) {
   const rounds = new RoundStore();
   const browserClients = new Set<WebSocket>();
   const oauthStates = new Map<string, number>();
-  let compilePromise: Promise<{ patch: PatchV1; round: ReturnType<RoundStore["snapshot"]> }> | null = null;
+  const compressProposals = options.compressProposals ?? (async (proposals: Proposal[]) => compressProposalsFallback(proposals));
+  let compilePromise: Promise<CompileResult> | null = null;
+  let completedCompile: { roundNumber: number; result: CompileResult } | null = null;
+  let candidateCompressionPromise: Promise<ReturnType<RoundStore["snapshot"]>> | null = null;
+  let paused = false;
 
   function broadcast(type: string, payload: unknown): void {
     const message = JSON.stringify({ type, payload });
@@ -46,8 +59,16 @@ export function createChaosPatchServer(options: ServerOptions) {
     }
   }
 
+  function snapshotPayload() {
+    return {
+      twitch: options.twitch.status(),
+      round: rounds.snapshot(),
+      session: { paused, settings: rounds.settingsSnapshot() }
+    };
+  }
+
   function broadcastSnapshot(): void {
-    broadcast("state:snapshot", { twitch: options.twitch.status(), round: rounds.snapshot() });
+    broadcast("state:snapshot", snapshotPayload());
   }
 
   function createOauthState(): string {
@@ -72,11 +93,48 @@ export function createChaosPatchServer(options: ServerOptions) {
     broadcastSnapshot();
   }
 
+  async function enterVote(): Promise<ReturnType<RoundStore["snapshot"]>> {
+    if (candidateCompressionPromise) return candidateCompressionPromise;
+    const current = rounds.snapshot();
+    if (current.phase !== "pitch") return current;
+    candidateCompressionPromise = (async () => {
+      let candidates: Candidate[];
+      try {
+        candidates = await compressProposals(current.proposals);
+      } catch (error) {
+        app.log.error(error, "Candidate compression failed; using local fallback");
+        candidates = compressProposalsFallback(current.proposals);
+      }
+      const round = rounds.snapshot().phase === "pitch" ? rounds.advance(candidates) : rounds.snapshot();
+      broadcastSnapshot();
+      return round;
+    })();
+    try {
+      return await candidateCompressionPromise;
+    } finally {
+      candidateCompressionPromise = null;
+    }
+  }
+
   options.twitch.on("chat", handleChat);
   options.twitch.on("status", broadcastSnapshot);
 
   app.get("/api/health", async () => ({ ok: true, service: "chaos-patch" }));
-  app.get("/api/status", async () => ({ twitch: options.twitch.status(), round: rounds.snapshot() }));
+  app.get("/api/status", async () => snapshotPayload());
+  app.post<{ Body: SessionSettings }>("/api/session/settings", async (request, reply) => {
+    const parsed = sessionSettingsSchema.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send({ error: "Invalid session settings" });
+    const settings = rounds.configure(parsed.data);
+    broadcastSnapshot();
+    return { settings };
+  });
+  app.get("/api/twitch/emotes", async (_request, reply) => {
+    try {
+      return { emotes: await options.twitch.listEmotes() };
+    } catch (error) {
+      return reply.code(409).send({ error: error instanceof Error ? error.message : "Twitch emote lookup failed" });
+    }
+  });
   app.get("/api/session/recap", async () => {
     const state = rounds.snapshot();
     return {
@@ -153,13 +211,22 @@ export function createChaosPatchServer(options: ServerOptions) {
   });
 
   app.post("/api/session/start", async () => {
+    paused = false;
     const round = rounds.start();
     broadcastSnapshot();
     return { round };
   });
 
+  app.post<{ Body: { paused?: boolean } }>("/api/session/pause", async (request, reply) => {
+    if (typeof request.body?.paused !== "boolean") return reply.code(400).send({ error: "Paused state is required" });
+    paused = request.body.paused;
+    broadcastSnapshot();
+    return { paused };
+  });
+
   app.post("/api/session/advance", async () => {
-    const round = rounds.advance();
+    const current = rounds.snapshot();
+    const round = current.phase === "pitch" ? await enterVote() : rounds.advance();
     broadcastSnapshot();
     return { round };
   });
@@ -183,14 +250,22 @@ export function createChaosPatchServer(options: ServerOptions) {
 
   async function compileWinner() {
     if (compilePromise) return compilePromise;
+    const roundNumber = rounds.snapshot().round;
+    if (completedCompile?.roundNumber === roundNumber) return completedCompile.result;
     compilePromise = (async () => {
       const winner = rounds.winner();
       if (!winner) throw new Error("At least one chat vote is required before compiling");
-      const patch = await options.compileCandidate(winner, rounds.snapshot().version + 1);
+      const patch = await options.compileCandidate(
+        winner,
+        rounds.snapshot().version + 1,
+        rounds.settingsSnapshot().intensity
+      );
       const round = rounds.apply(patch);
       broadcast("patch:applied", patch);
       broadcastSnapshot();
-      return { patch, round };
+      const result = { patch, round };
+      completedCompile = { roundNumber, result };
+      return result;
     })();
     try {
       return await compilePromise;
@@ -200,9 +275,12 @@ export function createChaosPatchServer(options: ServerOptions) {
   }
 
   const timer = setInterval(() => {
+    if (paused) return;
     const expiredPhase = rounds.tick();
     broadcastSnapshot();
-    if (expiredPhase === "vote") {
+    if (expiredPhase === "pitch") {
+      void enterVote();
+    } else if (expiredPhase === "vote") {
       void compileWinner().catch((error) => {
         app.log.error(error);
         broadcast("compile:error", { message: error instanceof Error ? error.message : "Patch compilation failed" });
@@ -214,7 +292,7 @@ export function createChaosPatchServer(options: ServerOptions) {
   const wsServer = new WebSocketServer({ noServer: true });
   wsServer.on("connection", (socket) => {
     browserClients.add(socket);
-    socket.send(JSON.stringify({ type: "state:snapshot", payload: { twitch: options.twitch.status(), round: rounds.snapshot() } }));
+    socket.send(JSON.stringify({ type: "state:snapshot", payload: snapshotPayload() }));
     socket.on("close", () => browserClients.delete(socket));
   });
   app.server.on("upgrade", (request, socket, head) => {

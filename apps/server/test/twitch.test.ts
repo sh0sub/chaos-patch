@@ -56,6 +56,56 @@ describe("TwitchClient", () => {
     });
   });
 
+  it("lists current Twitch emotes as browser-ready CDN images", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        access_token: "access-token",
+        refresh_token: "refresh-token",
+        expires_in: 3600,
+        scope: ["user:read:chat"],
+        token_type: "bearer"
+      }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        data: [{ id: "broadcaster-1", login: "tester", display_name: "Tester", profile_image_url: "" }]
+      }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        data: [{ id: "channel-1", name: "MyEmote" }],
+        template: "https://static-cdn.jtvnw.net/emoticons/v2/{{id}}/{{format}}/{{theme_mode}}/{{scale}}"
+      }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        data: [{ id: "25", name: "Kappa" }],
+        template: "https://static-cdn.jtvnw.net/emoticons/v2/{{id}}/{{format}}/{{theme_mode}}/{{scale}}"
+      }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const client = new TwitchClient({
+      clientId: "client-id",
+      clientSecret: "client-secret",
+      redirectUri: "http://localhost:3000/auth/callback"
+    });
+    await client.exchangeCode("oauth-code");
+
+    await expect(client.listEmotes()).resolves.toEqual([
+      {
+        id: "channel-1",
+        name: "MyEmote",
+        url: "https://static-cdn.jtvnw.net/emoticons/v2/channel-1/default/dark/3.0"
+      },
+      {
+        id: "25",
+        name: "Kappa",
+        url: "https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/3.0"
+      }
+    ]);
+    expect(fetchMock.mock.calls[2]).toEqual([
+      "https://api.twitch.tv/helix/chat/emotes?broadcaster_id=broadcaster-1",
+      expect.objectContaining({ headers: { Authorization: "Bearer access-token", "Client-Id": "client-id" } })
+    ]);
+    expect(fetchMock.mock.calls[3]).toEqual([
+      "https://api.twitch.tv/helix/chat/emotes/global",
+      expect.objectContaining({ headers: { Authorization: "Bearer access-token", "Client-Id": "client-id" } })
+    ]);
+  });
+
   it("surfaces Twitch's reason when clip creation is forbidden", async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({
