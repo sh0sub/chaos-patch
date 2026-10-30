@@ -6,6 +6,7 @@ import { compressProposalsFallback } from "./candidateCompressor";
 import { RoundStore } from "./round";
 import type { TwitchChatMessage, TwitchEmote, TwitchStatus } from "./twitch";
 import { BrowserClientRegistry } from "./browserClients";
+import { RuntimeTelemetry } from "./runtimeTelemetry";
 
 export type TwitchPort = {
   on(event: "chat", listener: (message: TwitchChatMessage) => void): unknown;
@@ -69,6 +70,7 @@ export function createChaosPatchServer(options: ServerOptions) {
   const app = Fastify({ logger: process.env.NODE_ENV !== "test" });
   const rounds = new RoundStore();
   const browserClients = new BrowserClientRegistry<WebSocket>();
+  const telemetry = new RuntimeTelemetry();
   const oauthStates = new Map<string, number>();
   const compressProposals = options.compressProposals ?? (async (proposals: Proposal[]) => compressProposalsFallback(proposals));
   let compilePromise: Promise<CompileResult> | null = null;
@@ -112,7 +114,8 @@ export function createChaosPatchServer(options: ServerOptions) {
     return {
       twitch: options.twitch.status(),
       round: rounds.snapshot(),
-      session: { paused, settings: rounds.settingsSnapshot(), filteredCount, overlayClients: browserClients.overlayCount }
+      session: { paused, settings: rounds.settingsSnapshot(), filteredCount, overlayClients: browserClients.overlayCount },
+      telemetry: telemetry.snapshot()
     };
   }
 
@@ -135,6 +138,7 @@ export function createChaosPatchServer(options: ServerOptions) {
   }
 
   function handleChat(message: TwitchChatMessage) {
+    telemetry.recordChat();
     const filtered = rounds.proposalIsBlocked(message.text);
     const proposal = rounds.addProposal(message.userId, message.userName, message.text);
     if (filtered) filteredCount += 1;
@@ -330,6 +334,7 @@ export function createChaosPatchServer(options: ServerOptions) {
     const roundNumber = rounds.snapshot().round;
     if (completedCompile?.roundNumber === roundNumber) return completedCompile.result;
     compilePromise = (async () => {
+      const compileStartedAt = performance.now();
       const winner = rounds.winner();
       if (!winner) throw new Error("At least one chat vote is required before compiling");
       const nextVersion = rounds.snapshot().version + 1;
@@ -352,6 +357,7 @@ export function createChaosPatchServer(options: ServerOptions) {
           broadcast("compile:error", { message });
         }
       }
+      telemetry.recordCompile(performance.now() - compileStartedAt);
       const round = rounds.apply(patch);
       announce(
         "apply",

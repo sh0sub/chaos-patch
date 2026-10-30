@@ -7,12 +7,13 @@ import { buildEmoteCatalog, type TwitchEmoteAsset } from "./gameVisuals";
 import { markerStatus } from "./marker";
 import { overlayConnectionLabel } from "./overlayConnection";
 import { recapMetrics, type SessionRecap } from "./recap";
+import { runtimeStatusPresentation } from "./runtimeStatus";
 import { overlaySourceUrl, parseBlockedTerms } from "./sessionControls";
 import { compileErrorFromSocketMessage, connectStateSocket } from "./stateSocket";
 import { twitchStatusPresentation, type TwitchEventSubStatus } from "./twitchStatus";
 
 type TwitchStatus = { authenticated: boolean; eventSub: TwitchEventSubStatus; user: { display_name: string; profile_image_url: string } | null; error: string | null };
-type Snapshot = { twitch: TwitchStatus; round: BroadcastState; session: { paused: boolean; settings: SessionSettings; filteredCount: number; overlayClients: number } };
+type Snapshot = { twitch: TwitchStatus; round: BroadcastState; session: { paused: boolean; settings: SessionSettings; filteredCount: number; overlayClients: number }; telemetry: { chatMessagesPerMinute: number; lastCompileMs: number | null } };
 type ChatLine = ReturnType<typeof chatLinePresentation>;
 type PatchEvent = { kind: "applied" | "rolled_back"; patch: PatchV1; automatic?: boolean };
 type RollbackEvent = { patch: PatchV1; reason: string };
@@ -21,7 +22,8 @@ type MarkerResult = { id: string; createdAt: string; positionSeconds: number; de
 const empty: Snapshot = {
   twitch: { authenticated: false, eventSub: "disconnected", user: null, error: null },
   round: { round: 0, version: 1, phase: "idle", remainingSeconds: 0, proposals: [], candidates: [], activePatch: null, patchHistory: [] },
-  session: { paused: false, settings: defaultSessionSettings, filteredCount: 0, overlayClients: 0 }
+  session: { paused: false, settings: defaultSessionSettings, filteredCount: 0, overlayClients: 0 },
+  telemetry: { chatMessagesPerMinute: 0, lastCompileMs: null }
 };
 const emptyRecap: SessionRecap = { round: 0, build: 1, applied: 0, rolledBack: 0, activePatch: null, recent: [] };
 
@@ -45,6 +47,13 @@ export function App() {
   const recapKey = snapshot.round.patchHistory.map(({ version, status }) => `${version}:${status}`).join("|");
   const emoteCatalog = useMemo(() => buildEmoteCatalog(emotes), [emotes]);
   const obsUrl = overlaySourceUrl(window.location.origin);
+  const runtimeStatus = runtimeStatusPresentation({
+    round: snapshot.round.round,
+    phase: snapshot.round.phase,
+    remainingSeconds: snapshot.round.remainingSeconds,
+    version: snapshot.round.version,
+    ...snapshot.telemetry
+  });
 
   useEffect(() => {
     fetch("/api/status").then((response) => response.json()).then(setSnapshot).catch(() => undefined);
@@ -167,8 +176,14 @@ export function App() {
     <main className="shell">
       <header className="topbar">
         <a className="brand" href="#arena" aria-label="Chaos Patch home"><span className="brand-mark">CP</span><span>CHAOS PATCH</span></a>
+        <div className="runtime-status" aria-label="Live runtime status">
+          <span><small>ROUND</small><b>{runtimeStatus.round.replace("ROUND ", "")}</b></span>
+          <span><small>PHASE</small><b>{runtimeStatus.phase}</b></span>
+          <span><small>VERSION</small><b>{runtimeStatus.version}</b></span>
+          <span><small>CHAT</small><b>{runtimeStatus.chatRate}</b></span>
+          <span><small>LLM</small><b>{runtimeStatus.llmLatency}</b></span>
+        </div>
         <div className="status-line"><span className={`signal ${snapshot.twitch.eventSub}`} />{statusPresentation.label}</div>
-        <div className="version">BUILD v{snapshot.round.version}.0</div>
       </header>
 
       {statusPresentation.reconnect && <div className="reconnect-banner" role="alert"><strong>Re-connect needed</strong><span>{snapshot.twitch.error ?? "Twitch authorization expired."}</span><a href="/auth/twitch">Reconnect Twitch</a></div>}
