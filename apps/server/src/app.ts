@@ -46,6 +46,11 @@ export function sessionDateInSeoul(date = new Date()): string {
   return `${value("year")}-${value("month")}-${value("day")}`;
 }
 
+export function authorizeOverlaySocket(requestUrl: string, overlayKey: string): boolean {
+  const url = new URL(requestUrl, "http://localhost");
+  return url.searchParams.get("surface") !== "overlay" || url.searchParams.get("token") === overlayKey;
+}
+
 const scriptedIdeas = [
   "giant Kappa rain",
   "mirror the controls",
@@ -79,6 +84,7 @@ type ServerOptions = {
 
 export function createChaosPatchServer(options: ServerOptions) {
   const app = Fastify({ logger: process.env.NODE_ENV !== "test" });
+  const overlayKey = randomBytes(24).toString("base64url");
   const rounds = new RoundStore();
   const browserClients = new BrowserClientRegistry<WebSocket>();
   const telemetry = new RuntimeTelemetry();
@@ -210,6 +216,9 @@ export function createChaosPatchServer(options: ServerOptions) {
 
   app.get("/api/health", async () => ({ ok: true, service: "chaos-patch" }));
   app.get("/api/status", async () => snapshotPayload());
+  app.post("/api/overlay/access", async () => ({
+    url: `${options.webOrigin.replace(/\/$/, "")}/overlay#k=${encodeURIComponent(overlayKey)}`
+  }));
   app.post<{ Body: SessionSettings }>("/api/session/settings", async (request, reply) => {
     const parsed = sessionSettingsSchema.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send({ error: "Invalid session settings" });
@@ -462,6 +471,10 @@ export function createChaosPatchServer(options: ServerOptions) {
   });
   app.server.on("upgrade", (request, socket, head) => {
     if (new URL(request.url ?? "", "http://localhost").pathname !== "/ws") return socket.destroy();
+    if (!authorizeOverlaySocket(request.url ?? "", overlayKey)) {
+      socket.write("HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n");
+      return socket.destroy();
+    }
     wsServer.handleUpgrade(request, socket, head, (client) => wsServer.emit("connection", client, request));
   });
   app.addHook("onClose", async () => {

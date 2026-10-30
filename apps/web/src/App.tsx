@@ -10,7 +10,7 @@ import { overlayConnectionLabel } from "./overlayConnection";
 import { patchHistoryPresentation } from "./patchHistory";
 import { recapMetrics, recapShareMessage, type SessionRecap } from "./recap";
 import { runtimeStatusPresentation } from "./runtimeStatus";
-import { overlaySourceUrl, parseBlockedTerms } from "./sessionControls";
+import { overlaySocketUrl, parseBlockedTerms } from "./sessionControls";
 import { compileErrorFromSocketMessage, connectStateSocket } from "./stateSocket";
 import { twitchStatusPresentation, type TwitchEventSubStatus } from "./twitchStatus";
 
@@ -43,6 +43,7 @@ export function App() {
   const [settingsDraft, setSettingsDraft] = useState<SessionSettings>(defaultSessionSettings);
   const [blockedTermsText, setBlockedTermsText] = useState(defaultSessionSettings.blockedTerms.join(", "));
   const [obsCopied, setObsCopied] = useState(false);
+  const [obsUrl, setObsUrl] = useState<string | null>(null);
   const [recapShareStatus, setRecapShareStatus] = useState("Share recap");
   const settingsKeyRef = useRef("");
   const isBroadcastOverlay = window.location.pathname === "/overlay";
@@ -50,7 +51,6 @@ export function App() {
   const statusPresentation = twitchStatusPresentation(snapshot.twitch.eventSub, snapshot.twitch.authenticated ? snapshot.twitch.user?.display_name ?? "Twitch" : null);
   const recapKey = snapshot.round.patchHistory.map(({ version, status }) => `${version}:${status}`).join("|");
   const emoteCatalog = useMemo(() => buildEmoteCatalog(emotes), [emotes]);
-  const obsUrl = overlaySourceUrl(window.location.origin);
   const historyRows = patchHistoryPresentation(snapshot.round.patchHistory);
   const runtimeStatus = runtimeStatusPresentation({
     round: snapshot.round.round,
@@ -63,7 +63,7 @@ export function App() {
   useEffect(() => {
     fetch("/api/status").then((response) => response.json()).then(setSnapshot).catch(() => undefined);
     const protocol = location.protocol === "https:" ? "wss:" : "ws:";
-    return connectStateSocket(`${protocol}//${location.host}/ws?surface=${isBroadcastOverlay ? "overlay" : "dashboard"}`, (data) => {
+    return connectStateSocket(overlaySocketUrl(protocol, location.host, location.pathname, location.hash), (data) => {
       const compileFailure = compileErrorFromSocketMessage(data);
       if (compileFailure) {
         setCompileError(compileFailure);
@@ -79,6 +79,14 @@ export function App() {
       }
     });
   }, []);
+
+  useEffect(() => {
+    if (isBroadcastOverlay) return;
+    fetch("/api/overlay/access", { method: "POST" })
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error("Overlay access failed")))
+      .then((payload: { url: string }) => setObsUrl(payload.url))
+      .catch(() => setObsUrl(null));
+  }, [isBroadcastOverlay]);
 
   useEffect(() => {
     if (!compileError) return;
@@ -151,6 +159,10 @@ export function App() {
     }
   };
   const copyObsUrl = async () => {
+    if (!obsUrl) {
+      setError("Secure OBS URL is not ready yet.");
+      return;
+    }
     try {
       await navigator.clipboard.writeText(obsUrl);
       setObsCopied(true);
@@ -276,10 +288,10 @@ export function App() {
           {!snapshot.twitch.authenticated ? <a className="button twitch" href="/auth/twitch">Connect current Twitch account</a> : <div className="account"><span className={`signal ${snapshot.twitch.eventSub}`} /><div><b>{snapshot.twitch.user?.display_name}</b><small>EventSub {snapshot.twitch.eventSub}</small></div></div>}
           {!snapshot.twitch.authenticated && <button className="button demo" disabled={busy} onClick={() => void action("/api/mock/script")}>Run scripted demo</button>}
           <div className="obs-source">
-            <div><span>02 · OBS SOURCE</span><a href="/overlay" target="_blank" rel="noreferrer">Open overlay ↗</a></div>
-            <code>{obsUrl}</code>
+            <div><span>02 · OBS SOURCE</span><a href={obsUrl ?? undefined} aria-disabled={!obsUrl} target="_blank" rel="noreferrer">Open overlay ↗</a></div>
+            <code>{obsUrl ?? "Issuing secure overlay URL…"}</code>
             <div className="obs-copy-row">
-              <button type="button" onClick={() => void copyObsUrl()}>{obsCopied ? "Copied" : "Copy OBS URL"}</button>
+              <button type="button" disabled={!obsUrl} onClick={() => void copyObsUrl()}>{obsCopied ? "Copied" : "Copy OBS URL"}</button>
               <small className={snapshot.session.overlayClients > 0 ? "live" : "waiting"}>{overlayConnectionLabel(snapshot.session.overlayClients)}</small>
             </div>
           </div>

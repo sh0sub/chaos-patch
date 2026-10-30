@@ -1,7 +1,7 @@
 import { EventEmitter } from "node:events";
 import { describe, expect, it } from "vitest";
 import type { PatchV1 } from "@chaos-patch/schema";
-import { createChaosPatchServer, sessionDateInSeoul, type TwitchPort } from "../src/app";
+import { authorizeOverlaySocket, createChaosPatchServer, sessionDateInSeoul, type TwitchPort } from "../src/app";
 
 class FakeTwitch extends EventEmitter implements TwitchPort {
   exchangeCodes: string[] = [];
@@ -377,6 +377,26 @@ describe("Chaos Patch HTTP server", () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.json()).toEqual({ emotes: twitch.emotes });
+    await server.close();
+  });
+
+  it("issues a fragment-only OBS overlay key", async () => {
+    const server = createChaosPatchServer({
+      twitch: new FakeTwitch(),
+      compileCandidate: async () => patch,
+      sessionSecret: "test-session-secret-that-is-at-least-32-characters",
+      webOrigin: "http://localhost:5173",
+      tickMilliseconds: 10_000
+    });
+
+    const response = await server.inject({ method: "POST", url: "/api/overlay/access" });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json().url).toMatch(/^http:\/\/localhost:5173\/overlay#k=[A-Za-z0-9_-]{32}$/);
+    expect(response.json().url).not.toContain("?k=");
+    expect(authorizeOverlaySocket("/ws?surface=dashboard", "secret-key")).toBe(true);
+    expect(authorizeOverlaySocket("/ws?surface=overlay", "secret-key")).toBe(false);
+    expect(authorizeOverlaySocket("/ws?surface=overlay&token=secret-key", "secret-key")).toBe(true);
     await server.close();
   });
 

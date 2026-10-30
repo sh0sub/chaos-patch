@@ -1,5 +1,12 @@
-export function overlaySourceUrl(origin: string): string {
-  return `${origin.replace(/\/$/, "")}/overlay`;
+export function overlaySourceUrl(origin: string, key: string): string {
+  return `${origin.replace(/\/$/, "")}/overlay#k=${encodeURIComponent(key)}`;
+}
+
+export function overlaySocketUrl(protocol: string, host: string, pathname: string, hash: string): string {
+  const surface = pathname === "/overlay" ? "overlay" : "dashboard";
+  const token = surface === "overlay" ? new URLSearchParams(hash.replace(/^#/, "")).get("k") : null;
+  const authorization = token ? `&token=${encodeURIComponent(token)}` : "";
+  return `${protocol}//${host}/ws?surface=${surface}${authorization}`;
 }
 
 export function parseBlockedTerms(input: string): string[] {

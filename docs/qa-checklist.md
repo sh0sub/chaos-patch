@@ -49,4 +49,4 @@ Work top-down. Add or update a focused test before each fix, keep `pnpm check` g
 
 - [x] S1 auto-clip on APPLY (`/api/twitch/clip` exists; wire it to the apply step, post the clip URL in the result announcement, skip quietly on 403/404).
 - [x] S3 `/recap` page: hero (avatar · date · patch count · contributor count) → top 3 by votes → full mono timeline → Patch Credits cloud → share button (chat announce + copy link).
-- [ ] Overlay key: issue `/overlay#k=…` and exchange the fragment for a session token on the WS upgrade instead of serving `/overlay` and `/ws` unauthenticated.
+- [x] Overlay key: issue `/overlay#k=…` and exchange the fragment for a session token on the WS upgrade instead of serving `/overlay` and `/ws` unauthenticated.
