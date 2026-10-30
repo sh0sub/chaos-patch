@@ -43,7 +43,7 @@ Work top-down. Add or update a focused test before each fix, keep `pnpm check` g
 - [x] `docs/design.md` typography floor is 12 px; `styles.css` has ~30 declarations at 9–11 px (eyebrows, panel heads, mono labels, patch-note codes). Raise to 12 px or update the contract.
 - [x] Line color is split between `#2a2a2e` (overlay) and `#34343a` (dashboard `--line`); pick one token.
 - [x] `Noto Sans KR` is named in the font stack but not loaded; add it to the Google Fonts import or remove it from the stack.
-- [ ] Responsive contract in `docs/design.md` (>1150 nav 216 px · 721–1150 two-column · ≤720 single column; check 360/390/720/1024/1440 + 200 % zoom) vs current breakpoints at 900/720 with no nav. Align the doc or the CSS, then record the five width checks in `docs/submission-evidence.md`.
+- [x] Responsive contract in `docs/design.md` (>1150 nav 216 px · 721–1150 two-column · ≤720 single column; check 360/390/720/1024/1440 + 200 % zoom) vs current breakpoints at 900/720 with no nav. Align the doc or the CSS, then record the five width checks in `docs/submission-evidence.md`.
 
 ## Should-tier (only after P0–P2)
 

@@ -53,9 +53,9 @@ Spacing follows 4/8/12/16/20/24/32/40/48. Controls have a 48 px target, 9 px but
 
 ## Responsive contract
 
-- `>1150`: 216 px navigation, wide arena, operational side rail.
-- `721–1150`: compact navigation and two-column workspace.
-- `<=720`: single column, 48 px controls, no fake device frame, no hidden horizontal overflow.
+- `>900`: wide arena with a 326 px operational control rail; the 56 px runtime bar remains visible.
+- `721–900`: single-column workspace with controls below the arena and a single-column audience feed.
+- `<=720`: single column, horizontally scrollable runtime metrics, 48 px controls, and no page-level horizontal overflow; expanded patch diffs also stack.
 - Required checks: 360, 390, 720, 1024, and 1440 px plus 200% browser zoom.
 
 ## States
