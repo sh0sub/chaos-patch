@@ -293,4 +293,36 @@ describe("TwitchClient", () => {
     const refreshCalls = fetchMock.mock.calls.filter(([url]) => String(url) === "https://id.twitch.tv/oauth2/token");
     expect(refreshCalls).toHaveLength(2);
   });
+
+  it("marks Twitch as expired when token refresh fails", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        access_token: "expired-access",
+        refresh_token: "refresh-token",
+        expires_in: 0,
+        scope: ["user:write:chat"],
+        token_type: "bearer"
+      }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        data: [{ id: "broadcaster-1", login: "tester", display_name: "Tester", profile_image_url: "" }]
+      }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(null, { status: 401 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const client = new TwitchClient({
+      clientId: "client-id",
+      clientSecret: "client-secret",
+      redirectUri: "http://localhost:3000/auth/callback"
+    });
+    const statuses: string[] = [];
+    client.on("status", (status) => statuses.push(status.eventSub));
+    await client.exchangeCode("oauth-code");
+
+    await expect(client.sendChatMessage("hello")).rejects.toThrow("Twitch token refresh failed (401)");
+    expect(client.status()).toMatchObject({
+      authenticated: true,
+      eventSub: "expired",
+      error: "Twitch token refresh failed (401)"
+    });
+    expect(statuses).toContain("expired");
+  });
 });

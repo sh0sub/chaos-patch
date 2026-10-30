@@ -29,7 +29,7 @@ type StoredAuth = TwitchTokenResponse & {
 
 export type TwitchStatus = {
   authenticated: boolean;
-  eventSub: "disconnected" | "connecting" | "connected" | "error";
+  eventSub: "disconnected" | "connecting" | "connected" | "expired" | "error";
   lastKeepaliveAt: string | null;
   user: TwitchUser | null;
   error: string | null;
@@ -97,6 +97,8 @@ export class TwitchClient extends EventEmitter {
       expiresAt: Date.now() + token.expires_in * 1000,
       user
     };
+    this.eventSubStatus = "disconnected";
+    this.error = null;
     this.emitStatus();
     return user;
   }
@@ -398,21 +400,28 @@ export class TwitchClient extends EventEmitter {
 
   private async refreshAuth(): Promise<StoredAuth> {
     if (!this.auth) throw new Error("Twitch is not authenticated");
-    const body = new URLSearchParams({
-      client_id: this.config.clientId,
-      client_secret: this.config.clientSecret,
-      grant_type: "refresh_token",
-      refresh_token: this.auth.refresh_token
-    });
-    const response = await fetch(TOKEN_URL, { method: "POST", body });
-    if (!response.ok) throw new Error(`Twitch token refresh failed (${response.status})`);
-    const token = (await response.json()) as TwitchTokenResponse;
-    this.auth = {
-      ...token,
-      expiresAt: Date.now() + token.expires_in * 1000,
-      user: this.auth.user
-    };
-    return this.auth;
+    try {
+      const body = new URLSearchParams({
+        client_id: this.config.clientId,
+        client_secret: this.config.clientSecret,
+        grant_type: "refresh_token",
+        refresh_token: this.auth.refresh_token
+      });
+      const response = await fetch(TOKEN_URL, { method: "POST", body });
+      if (!response.ok) throw new Error(`Twitch token refresh failed (${response.status})`);
+      const token = (await response.json()) as TwitchTokenResponse;
+      this.auth = {
+        ...token,
+        expiresAt: Date.now() + token.expires_in * 1000,
+        user: this.auth.user
+      };
+      return this.auth;
+    } catch (error) {
+      this.eventSubStatus = "expired";
+      this.error = error instanceof Error ? error.message : "Twitch token refresh failed";
+      this.emitStatus();
+      throw error;
+    }
   }
 
   private emitStatus(): void {

@@ -8,8 +8,9 @@ import { markerStatus } from "./marker";
 import { recapMetrics, type SessionRecap } from "./recap";
 import { overlaySourceUrl, parseBlockedTerms } from "./sessionControls";
 import { compileErrorFromSocketMessage, connectStateSocket } from "./stateSocket";
+import { twitchStatusPresentation, type TwitchEventSubStatus } from "./twitchStatus";
 
-type TwitchStatus = { authenticated: boolean; eventSub: string; user: { display_name: string; profile_image_url: string } | null; error: string | null };
+type TwitchStatus = { authenticated: boolean; eventSub: TwitchEventSubStatus; user: { display_name: string; profile_image_url: string } | null; error: string | null };
 type Snapshot = { twitch: TwitchStatus; round: BroadcastState; session: { paused: boolean; settings: SessionSettings; filteredCount: number } };
 type ChatLine = ReturnType<typeof chatLinePresentation>;
 type PatchEvent = { kind: "applied" | "rolled_back"; patch: PatchV1; automatic?: boolean };
@@ -39,7 +40,7 @@ export function App() {
   const [obsCopied, setObsCopied] = useState(false);
   const settingsKeyRef = useRef("");
   const isBroadcastOverlay = window.location.pathname === "/overlay";
-  const statusLabel = snapshot.twitch.authenticated ? `${snapshot.twitch.user?.display_name ?? "Twitch"} · ${snapshot.twitch.eventSub}` : "Twitch disconnected";
+  const statusPresentation = twitchStatusPresentation(snapshot.twitch.eventSub, snapshot.twitch.authenticated ? snapshot.twitch.user?.display_name ?? "Twitch" : null);
   const recapKey = snapshot.round.patchHistory.map(({ version, status }) => `${version}:${status}`).join("|");
   const emoteCatalog = useMemo(() => buildEmoteCatalog(emotes), [emotes]);
   const obsUrl = overlaySourceUrl(window.location.origin);
@@ -165,9 +166,11 @@ export function App() {
     <main className="shell">
       <header className="topbar">
         <a className="brand" href="#arena" aria-label="Chaos Patch home"><span className="brand-mark">CP</span><span>CHAOS PATCH</span></a>
-        <div className="status-line"><span className={`signal ${snapshot.twitch.eventSub}`} />{statusLabel}</div>
+        <div className="status-line"><span className={`signal ${snapshot.twitch.eventSub}`} />{statusPresentation.label}</div>
         <div className="version">BUILD v{snapshot.round.version}.0</div>
       </header>
+
+      {statusPresentation.reconnect && <div className="reconnect-banner" role="alert"><strong>Re-connect needed</strong><span>{snapshot.twitch.error ?? "Twitch authorization expired."}</span><a href="/auth/twitch">Reconnect Twitch</a></div>}
 
       <section className="hero" id="arena">
         <div className="hero-copy">
@@ -203,7 +206,7 @@ export function App() {
 
         <aside className="control-panel">
           <div className="control-head"><p className="eyebrow">CONTROL ROOM</p><h2>Run the chaos</h2></div>
-          {!snapshot.twitch.authenticated ? <a className="button twitch" href="/auth/twitch">Connect current Twitch account</a> : <div className="account"><span className="signal connected" /><div><b>{snapshot.twitch.user?.display_name}</b><small>EventSub {snapshot.twitch.eventSub}</small></div></div>}
+          {!snapshot.twitch.authenticated ? <a className="button twitch" href="/auth/twitch">Connect current Twitch account</a> : <div className="account"><span className={`signal ${snapshot.twitch.eventSub}`} /><div><b>{snapshot.twitch.user?.display_name}</b><small>EventSub {snapshot.twitch.eventSub}</small></div></div>}
           {!snapshot.twitch.authenticated && <button className="button demo" disabled={busy} onClick={() => void action("/api/mock/script")}>Run scripted demo</button>}
           <div className="obs-source">
             <div><span>02 · OBS SOURCE</span><a href="/overlay" target="_blank" rel="noreferrer">Open overlay ↗</a></div>

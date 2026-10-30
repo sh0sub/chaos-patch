@@ -1,5 +1,6 @@
 import type { BroadcastState, PatchV1 } from "@chaos-patch/schema";
 import type { EmoteCatalog } from "../gameVisuals";
+import type { TwitchEventSubStatus } from "../twitchStatus";
 import { createApplyPresentation, createCompilePresentation, createOverlayPresentation, createOverlayRail, createPitchPresentation, createRollbackLabel } from "../overlay";
 import { GameCanvas } from "./GameCanvas";
 
@@ -9,7 +10,7 @@ type PatchEvent = { kind: "applied" | "rolled_back"; patch: PatchV1; automatic?:
 type Props = {
   round: BroadcastState;
   twitchUser: { display_name: string; profile_image_url: string } | null;
-  eventSubStatus: string;
+  eventSubStatus: TwitchEventSubStatus;
   chat: ChatLine[];
   patchEvent: PatchEvent | null;
   compileError: string | null;

@@ -34,7 +34,7 @@ Work top-down. Add or update a focused test before each fix, keep `pnpm check` g
 
 ## P3 · Dashboard (M1–M2) and states
 
-- [ ] Operational states required by `docs/design.md`: disconnected / connecting / connected / **expired** / error, each shown with text + color. `expired` does not exist in `TwitchStatus["eventSub"]` and `.signal.expired` is not styled; add a magenta `Re-connect needed` banner when token refresh fails.
+- [x] Operational states required by `docs/design.md`: disconnected / connecting / connected / **expired** / error, each shown with text + color. `expired` does not exist in `TwitchStatus["eventSub"]` and `.signal.expired` is not styled; add a magenta `Re-connect needed` banner when token refresh fails.
 - [ ] Overlay connection status: count WS clients on `/overlay` and show `Overlay: waiting… / live (n clients)` next to the Copy button.
 - [ ] M2 status bar (56 px): round · phase timer · version · chat msgs/min · LLM latency (last compile ms). Chat rate and LLM latency are not tracked today.
 - [ ] Patch history rows: hover/expand shows the knob diff (`- obstacle.scale 1.0` / `+ obstacle.scale 2.6`) and a `Safety guard 4/4` strip (schema strict · allowed knobs · blocked terms · rollback watch).

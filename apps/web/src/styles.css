@@ -15,7 +15,10 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .signal { width:8px; height:8px; border-radius:50%; background:#6c6c72; box-shadow:0 0 0 4px rgba(108,108,114,.12); }
 .signal.connected { background:var(--lime); box-shadow:0 0 0 4px rgba(200,255,61,.12); }
 .signal.connecting { background:#ffc46b; }
-.signal.error { background:var(--pink); }
+.signal.expired, .signal.error { background:var(--pink); box-shadow:0 0 0 4px rgba(255,61,166,.14); }
+.reconnect-banner { min-height:52px; display:flex; align-items:center; gap:14px; padding:10px 16px; border:1px solid #633047; color:var(--pink); background:#28121e; font-size:13px; }
+.reconnect-banner span { color:#ffb8dc; }
+.reconnect-banner a { margin-left:auto; padding:8px 11px; border:1px solid var(--pink); color:#fff; text-decoration:none; font-weight:800; }
 .version { justify-self:end; color:#86868e; font:500 12px "JetBrains Mono"; }
 .hero { min-height:310px; display:flex; align-items:end; justify-content:space-between; padding:62px 0 44px; gap:32px; }
 .eyebrow { margin:0 0 12px; color:var(--lime); font:700 11px "JetBrains Mono"; letter-spacing:.16em; }
