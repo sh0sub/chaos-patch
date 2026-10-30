@@ -6,6 +6,7 @@ import { chatLinePresentation, type ChatWireLine } from "./chatWire";
 import { buildEmoteCatalog, type TwitchEmoteAsset } from "./gameVisuals";
 import { markerStatus } from "./marker";
 import { overlayConnectionLabel } from "./overlayConnection";
+import { patchHistoryPresentation } from "./patchHistory";
 import { recapMetrics, type SessionRecap } from "./recap";
 import { runtimeStatusPresentation } from "./runtimeStatus";
 import { overlaySourceUrl, parseBlockedTerms } from "./sessionControls";
@@ -47,6 +48,7 @@ export function App() {
   const recapKey = snapshot.round.patchHistory.map(({ version, status }) => `${version}:${status}`).join("|");
   const emoteCatalog = useMemo(() => buildEmoteCatalog(emotes), [emotes]);
   const obsUrl = overlaySourceUrl(window.location.origin);
+  const historyRows = patchHistoryPresentation(snapshot.round.patchHistory);
   const runtimeStatus = runtimeStatusPresentation({
     round: snapshot.round.round,
     phase: snapshot.round.phase,
@@ -311,8 +313,16 @@ export function App() {
           {recapMetrics(recap).map((metric) => <div key={metric.label}><span>{metric.label}</span><strong>{metric.value}</strong></div>)}
         </div>
         <div className="history-list">
-          {snapshot.round.patchHistory.length ? snapshot.round.patchHistory.map((entry) => (
-            <div key={`${entry.version}-${entry.title}`}><code>v{entry.version}</code><strong>{entry.title}</strong><span className={entry.status}>{entry.status === "applied" ? "APPLIED" : "ROLLED BACK"}</span></div>
+          {historyRows.length ? historyRows.map((entry) => (
+            <details key={`${entry.version}-${entry.title}`}>
+              <summary className="history-summary"><code>v{entry.version}</code><strong>{entry.title}</strong><span className={entry.status}>{entry.status === "applied" ? "APPLIED" : "ROLLED BACK"}</span></summary>
+              <div className="history-detail">
+                <div className="knob-diff">
+                  {entry.diffs.length ? entry.diffs.map((diff) => <div key={diff.knob}><code>- {diff.knob} {diff.before}</code><code>+ {diff.knob} {diff.after}</code></div>) : <small>No knob changes</small>}
+                </div>
+                <div className="safety-strip"><strong>Safety guard 4/4</strong>{entry.safety.map((item) => <span key={item}>✓ {item}</span>)}</div>
+              </div>
+            </details>
           )) : <p>No patches shipped yet. A compiled winner will appear here.</p>}
         </div>
       </section>

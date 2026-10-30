@@ -136,11 +136,23 @@ h2 { margin:0; font-size:28px; letter-spacing:-.04em; }
 .recap-metrics span { display:block; margin-bottom:7px; color:#777780; font:700 10px "JetBrains Mono"; letter-spacing:.1em; }
 .recap-metrics strong { display:block; overflow:hidden; color:#efeff1; text-overflow:ellipsis; white-space:nowrap; font-size:clamp(18px, 2vw, 28px); }
 .history-list { border-bottom:1px solid var(--line); }
-.history-list > div { min-height:58px; display:grid; grid-template-columns:72px 1fr auto; align-items:center; gap:16px; border-top:1px solid #27272b; }
-.history-list code { color:#8e8e97; }
-.history-list strong { font-size:14px; }
-.history-list span { padding:6px 8px; border:1px solid var(--lime); color:var(--lime); font:700 10px "JetBrains Mono"; }
-.history-list span.rolled_back { border-color:var(--pink); color:#ff8fc8; }
+.history-list > details { border-top:1px solid #27272b; }
+.history-summary { min-height:58px; display:grid; grid-template-columns:72px 1fr auto; align-items:center; gap:16px; cursor:pointer; list-style:none; }
+.history-summary::-webkit-details-marker { display:none; }
+.history-summary code { color:#8e8e97; }
+.history-summary strong { font-size:14px; }
+.history-summary > span { padding:6px 8px; border:1px solid var(--lime); color:var(--lime); font:700 10px "JetBrains Mono"; }
+.history-summary > span.rolled_back { border-color:var(--pink); color:#ff8fc8; }
+.history-detail { display:none; grid-template-columns:minmax(0, 1fr) auto; gap:28px; padding:16px 18px 20px 72px; background:#141416; }
+.history-list details[open] > .history-detail, .history-list details:hover > .history-detail { display:grid; }
+.knob-diff { display:grid; gap:8px; }
+.knob-diff > div { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.knob-diff code { color:#ff8fc8; font-size:12px; }
+.knob-diff code + code { color:var(--lime); }
+.knob-diff small { color:#777780; }
+.safety-strip { align-self:start; display:grid; grid-template-columns:repeat(2, auto); gap:8px 14px; }
+.safety-strip strong { grid-column:1 / -1; color:var(--lime); font:700 12px "JetBrains Mono"; }
+.safety-strip span { color:#b8b8c2; font:600 11px "JetBrains Mono"; }
 .history-list > p { margin:0; padding:24px 0; color:#898991; }
 code { font-family:"JetBrains Mono", monospace; }
 
