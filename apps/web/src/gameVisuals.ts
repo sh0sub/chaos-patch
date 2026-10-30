@@ -1,3 +1,5 @@
+import { formatRunTime } from "./gameRuntime";
+
 export type TwitchEmoteAsset = {
   id: string;
   name: string;
@@ -35,5 +37,13 @@ export function renderEffectProfile(cameraShake: number, fog: number, elapsedSec
     shakeX: shake === 0 ? 0 : Math.sin(elapsedSeconds * 47) * shake * 8,
     shakeY: shake === 0 ? 0 : Math.cos(elapsedSeconds * 53) * shake * 6,
     fogOpacity: Math.min(0.85, Math.max(0, fog))
+  };
+}
+
+export function arenaHudCopy(labelTitle: string, elapsedSeconds: number, bestSeconds: number) {
+  return {
+    title: labelTitle,
+    survived: formatRunTime(elapsedSeconds),
+    best: formatRunTime(bestSeconds)
   };
 }

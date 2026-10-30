@@ -31,6 +31,7 @@ h1 em { color:var(--lime); font-style:normal; }
 .panel-head { height:48px; display:flex; align-items:center; justify-content:space-between; padding:0 18px; border-bottom:1px solid var(--line); color:#b8b8c2; font:500 11px "JetBrains Mono"; }
 .game-frame { position:relative; }
 .game-canvas { display:block; width:100%; height:clamp(360px, 45vw, 620px); background:#111219; }
+.game-arena-title { position:absolute; z-index:1; top:14px; left:50%; transform:translateX(-50%); padding:7px 11px; border:1px solid #3a3a46; background:rgba(14,14,16,.88); color:#c8ff3d; font:800 13px/1 ui-monospace, monospace; letter-spacing:.12em; text-transform:uppercase; pointer-events:none; }
 .game-restart { position:absolute; left:50%; bottom:18%; min-height:48px; transform:translateX(-50%); padding:0 18px; border:1px solid var(--lime); border-radius:9px; color:#10120b; background:var(--lime); cursor:pointer; font-weight:800; }
 .game-restart span { margin-left:12px; padding-left:12px; border-left:1px solid rgba(16,18,11,.35); font:700 10px "JetBrains Mono"; }
 .patch-event { position:absolute; z-index:3; top:72px; left:50%; width:min(460px, calc(100% - 32px)); transform:translateX(-50%); display:grid; gap:4px; padding:18px 22px; border:1px solid var(--lime); color:#10120b; background:var(--lime); box-shadow:8px 8px 0 rgba(61,224,255,.45), -8px -8px 0 rgba(255,61,166,.32); animation:patch-reveal 360ms ease-out both; }

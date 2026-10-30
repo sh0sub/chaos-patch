@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildEmoteCatalog, gameVisualSources, renderEffectProfile, resolveEmoteUrl } from "./gameVisuals";
+import { arenaHudCopy, buildEmoteCatalog, gameVisualSources, renderEffectProfile, resolveEmoteUrl } from "./gameVisuals";
 
 describe("game visuals", () => {
   it("resolves an emote patch to the Twitch CDN image by name", () => {
@@ -41,5 +41,13 @@ describe("game visuals", () => {
     expect(renderEffectProfile(1, 0.85, 1.25)).toMatchObject({ fogOpacity: 0.85 });
     expect(Math.abs(renderEffectProfile(1, 0.85, 1.25).shakeX)).toBeLessThanOrEqual(8);
     expect(renderEffectProfile(0, 0, 1.25)).toEqual({ shakeX: 0, shakeY: 0, fogOpacity: 0 });
+  });
+
+  it("includes the patched arena title in the visible HUD copy", () => {
+    expect(arenaHudCopy("KAPPA RAIN", 12.4, 31.8)).toEqual({
+      title: "KAPPA RAIN",
+      survived: "00:12",
+      best: "00:31"
+    });
   });
 });

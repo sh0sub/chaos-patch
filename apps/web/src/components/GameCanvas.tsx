@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { applyPatch, createGameState, resizeGame, restartGame, type GameState } from "@chaos-patch/game";
-import type { PatchV1 } from "@chaos-patch/schema";
-import { advanceGameFrame, bestSurvivalSeconds, canRestartRun, formatRunTime } from "../gameRuntime";
-import { gameVisualSources, renderEffectProfile, type EmoteCatalog } from "../gameVisuals";
+import { defaultPatchParams, type PatchV1 } from "@chaos-patch/schema";
+import { advanceGameFrame, bestSurvivalSeconds, canRestartRun } from "../gameRuntime";
+import { arenaHudCopy, gameVisualSources, renderEffectProfile, type EmoteCatalog } from "../gameVisuals";
 import { PatchHealthGuard } from "../patchHealth";
 
 type Props = {
@@ -29,6 +29,7 @@ export function GameCanvas({ patch, paused = false, emoteCatalog = emptyCatalog,
   const bestSecondsRef = useRef(0);
   const [alive, setAlive] = useState(true);
   const patchVersion = patch?.version ?? null;
+  const arenaTitle = patch?.params.labelTitle ?? defaultPatchParams.labelTitle;
 
   const restart = () => {
     stateRef.current = restartGame(stateRef.current);
@@ -140,6 +141,7 @@ export function GameCanvas({ patch, paused = false, emoteCatalog = emptyCatalog,
   return (
     <div className="game-frame">
       <canvas ref={canvasRef} className="game-canvas" aria-label="Playable Emote Dodge arena" />
+      <div className="game-arena-title">{arenaTitle}</div>
       {canRestartRun(alive, paused) && <button className="game-restart" onClick={restart}>Restart run <span>SPACE</span></button>}
     </div>
   );
@@ -169,6 +171,7 @@ function drawGame(
   } as const;
   const [background, player, obstacle] = palettes[state.params.palette];
   const effects = renderEffectProfile(state.params.cameraShake, state.params.fog, state.elapsed);
+  const hud = arenaHudCopy(state.params.labelTitle, state.elapsed, bestSeconds);
   ctx.save();
   ctx.translate(effects.shakeX, effects.shakeY);
   ctx.fillStyle = state.params.invertColors ? player : background;
@@ -230,8 +233,8 @@ function drawGame(
   ctx.fillText("BEST", 112, 22);
   ctx.fillStyle = "#efeff1";
   ctx.font = "800 17px ui-monospace, monospace";
-  ctx.fillText(formatRunTime(state.elapsed), 20, 42);
-  ctx.fillText(formatRunTime(bestSeconds), 112, 42);
+  ctx.fillText(hud.survived, 20, 42);
+  ctx.fillText(hud.best, 112, 42);
   ctx.restore();
   if (effects.fogOpacity > 0) {
     const fog = ctx.createRadialGradient(state.width / 2, state.height / 2, 40, state.width / 2, state.height / 2, state.width * .7);
