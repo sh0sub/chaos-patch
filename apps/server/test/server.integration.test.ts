@@ -153,6 +153,29 @@ describe("Chaos Patch HTTP server", () => {
     await server.close();
   });
 
+  it("counts blocked proposals and returns only a filtered placeholder", async () => {
+    const server = createChaosPatchServer({
+      twitch: new FakeTwitch(),
+      compileCandidate: async () => patch,
+      sessionSecret: "test-session-secret-that-is-at-least-32-characters",
+      webOrigin: "http://localhost:5173",
+      tickMilliseconds: 10_000
+    });
+    await server.inject({ method: "POST", url: "/api/session/start" });
+    await server.inject({ method: "POST", url: "/api/session/advance" });
+
+    const blocked = await server.inject({
+      method: "POST",
+      url: "/api/mock/chat",
+      payload: { userName: "viewer", message: "!patch add a gambling wheel" }
+    });
+    const status = await server.inject({ method: "GET", url: "/api/status" });
+
+    expect(blocked.json()).toEqual({ ok: true, filtered: true, message: "[filtered]" });
+    expect(status.json()).toMatchObject({ session: { filteredCount: 1 }, round: { proposals: [] } });
+    await server.close();
+  });
+
   it("runs candidate compression when the timed pitch closes", async () => {
     let compressCalls = 0;
     const server = createChaosPatchServer({

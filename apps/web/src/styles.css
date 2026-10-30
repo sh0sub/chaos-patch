@@ -111,6 +111,7 @@ h2 { margin:0; font-size:28px; letter-spacing:-.04em; }
 .chat-log { border-left:1px solid var(--line); padding-left:24px; }
 .chat-log h3 { margin-top:0; }
 .chat-log p { font-size:12px; line-height:1.55; }
+.chat-log p.filtered { color:#777780; font-style:italic; }
 .chat-log b { color:var(--purple); margin-right:6px; }
 .muted { color:#777780; }
 .history { padding-top:64px; }

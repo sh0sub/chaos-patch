@@ -19,7 +19,7 @@ Work top-down. Add or update a focused test before each fix, keep `pnpm check` g
 - [x] Apply card shows only `notes[0]`. Render all notes (max 3) as a NEW/BALANCE list and add `{votes} votes · Round {n}` to the footer.
 - [x] `labelTitle` is in `patchParamsSchema` and `defaultPatchParams` but is never drawn. Render it as the arena title (or drop it from the schema and the prompt).
 - [x] Mock mode for judges: add a scripted proposal set (≥10 seeded `!patch` ideas + votes) runnable without a Twitch account, and document the no-Twitch path in README (today "Local run" requires a Twitch app + OpenAI key).
-- [ ] Blocked proposals are dropped silently. Show them in the dashboard chat wire as `[filtered]` in muted grey, and count `filtered` next to the proposal count.
+- [x] Blocked proposals are dropped silently. Show them in the dashboard chat wire as `[filtered]` in muted grey, and count `filtered` next to the proposal count.
 
 ## P2 · Overlay (M3–M5) design spec
 

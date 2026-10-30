@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { defaultSessionSettings, type BroadcastState, type PatchV1, type SessionSettings } from "@chaos-patch/schema";
 import { BroadcastOverlay } from "./components/BroadcastOverlay";
 import { GameCanvas } from "./components/GameCanvas";
+import { chatLinePresentation, type ChatWireLine } from "./chatWire";
 import { buildEmoteCatalog, type TwitchEmoteAsset } from "./gameVisuals";
 import { markerStatus } from "./marker";
 import { recapMetrics, type SessionRecap } from "./recap";
@@ -9,8 +10,8 @@ import { overlaySourceUrl, parseBlockedTerms } from "./sessionControls";
 import { compileErrorFromSocketMessage, connectStateSocket } from "./stateSocket";
 
 type TwitchStatus = { authenticated: boolean; eventSub: string; user: { display_name: string; profile_image_url: string } | null; error: string | null };
-type Snapshot = { twitch: TwitchStatus; round: BroadcastState; session: { paused: boolean; settings: SessionSettings } };
-type ChatLine = { userName: string; text: string };
+type Snapshot = { twitch: TwitchStatus; round: BroadcastState; session: { paused: boolean; settings: SessionSettings; filteredCount: number } };
+type ChatLine = ReturnType<typeof chatLinePresentation>;
 type PatchEvent = { kind: "applied" | "rolled_back"; patch: PatchV1; automatic?: boolean };
 type RollbackEvent = { patch: PatchV1; reason: string };
 type MarkerResult = { id: string; createdAt: string; positionSeconds: number; description: string };
@@ -18,7 +19,7 @@ type MarkerResult = { id: string; createdAt: string; positionSeconds: number; de
 const empty: Snapshot = {
   twitch: { authenticated: false, eventSub: "disconnected", user: null, error: null },
   round: { round: 0, version: 1, phase: "idle", remainingSeconds: 0, proposals: [], candidates: [], activePatch: null, patchHistory: [] },
-  session: { paused: false, settings: defaultSessionSettings }
+  session: { paused: false, settings: defaultSessionSettings, filteredCount: 0 }
 };
 const emptyRecap: SessionRecap = { round: 0, build: 1, applied: 0, rolledBack: 0, activePatch: null, recent: [] };
 
@@ -52,9 +53,9 @@ export function App() {
         setCompileError(compileFailure);
         setError(compileFailure);
       }
-      const message = JSON.parse(data) as { type: string; payload: Snapshot | ChatLine | PatchV1 | RollbackEvent };
+      const message = JSON.parse(data) as { type: string; payload: Snapshot | ChatWireLine | PatchV1 | RollbackEvent };
       if (message.type === "state:snapshot") setSnapshot(message.payload as Snapshot);
-      if (message.type === "chat:message") setChat((current) => [message.payload as ChatLine, ...current].slice(0, 8));
+      if (message.type === "chat:message") setChat((current) => [chatLinePresentation(message.payload as ChatWireLine), ...current].slice(0, 8));
       if (message.type === "patch:applied") setPatchEvent({ kind: "applied", patch: message.payload as PatchV1 });
       if (message.type === "patch:rolled_back") {
         const rollback = message.payload as RollbackEvent;
@@ -250,7 +251,7 @@ export function App() {
             {["play", "pitch", "vote", "compile", "apply"].map((phase, index) => <div className={snapshot.round.phase === phase ? "current" : ""} key={phase}><span>0{index + 1}</span>{phase}</div>)}
           </div>
           <div className="live-slate" aria-live="polite">
-            <div className="slate-head"><span>{snapshot.round.candidates.length ? "LIVE VOTE" : "PITCH QUEUE"}</span><b>{snapshot.round.candidates.length || snapshot.round.proposals.length}/3</b></div>
+            <div className="slate-head"><span>{snapshot.round.candidates.length ? "LIVE VOTE" : "PITCH QUEUE"}</span><b>{snapshot.round.candidates.length || snapshot.round.proposals.length}/3{snapshot.session.filteredCount ? ` · ${snapshot.session.filteredCount} filtered` : ""}</b></div>
             {snapshot.round.candidates.length > 0 ? snapshot.round.candidates.map((candidate, index) => (
               <div className="slate-row" key={candidate.id}><span>{index + 1}</span><p>{candidate.title}</p><b>{candidate.votes}</b></div>
             )) : snapshot.round.proposals.length > 0 ? snapshot.round.proposals.slice(0, 3).map((proposal) => (
@@ -277,7 +278,7 @@ export function App() {
           </div>
           <div className="chat-log" aria-live="polite">
             <h3>Chat wire</h3>
-            {chat.length ? chat.map((line, index) => <p key={`${line.userName}-${index}`}><b>{line.userName}</b> {line.text}</p>) : <p className="muted">No messages on the wire yet.</p>}
+            {chat.length ? chat.map((line, index) => <p className={line.muted ? "filtered" : undefined} key={`${line.userName}-${index}`}><b>{line.userName}</b> {line.text}</p>) : <p className="muted">No messages on the wire yet.</p>}
           </div>
         </div>
       </section>

@@ -94,8 +94,7 @@ export class RoundStore {
   addProposal(userId: string, userName: string, text: string): Proposal | null {
     const normalized = text.replace(/^!(patch|idea)\s+/i, "").trim();
     if (!normalized || normalized.length > 120 || this.state.phase !== "pitch") return null;
-    const normalizedLower = normalized.toLocaleLowerCase();
-    if (this.settings.blockedTerms.some((term) => normalizedLower.includes(term.toLocaleLowerCase()))) return null;
+    if (this.proposalIsBlocked(text)) return null;
     const proposal = proposalSchema.parse({
       id: randomUUID(),
       userId,
@@ -105,6 +104,13 @@ export class RoundStore {
     });
     this.state.proposals = [...this.state.proposals, proposal];
     return proposal;
+  }
+
+  proposalIsBlocked(text: string): boolean {
+    const normalized = text.replace(/^!(patch|idea)\s+/i, "").trim();
+    if (!normalized || normalized.length > 120 || this.state.phase !== "pitch") return false;
+    const normalizedLower = normalized.toLocaleLowerCase();
+    return this.settings.blockedTerms.some((term) => normalizedLower.includes(term.toLocaleLowerCase()));
   }
 
   vote(userId: string, choice: number): BroadcastState {

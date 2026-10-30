@@ -75,6 +75,7 @@ export function createChaosPatchServer(options: ServerOptions) {
   let candidateCompressionPromise: Promise<ReturnType<RoundStore["snapshot"]>> | null = null;
   const announcementsByRound = new Map<number, Set<AnnouncementKind>>();
   let paused = false;
+  let filteredCount = 0;
 
   function announce(kind: AnnouncementKind, roundNumber: number, message: string): void {
     const sent = announcementsByRound.get(roundNumber) ?? new Set<AnnouncementKind>();
@@ -110,7 +111,7 @@ export function createChaosPatchServer(options: ServerOptions) {
     return {
       twitch: options.twitch.status(),
       round: rounds.snapshot(),
-      session: { paused, settings: rounds.settingsSnapshot() }
+      session: { paused, settings: rounds.settingsSnapshot(), filteredCount }
     };
   }
 
@@ -132,12 +133,16 @@ export function createChaosPatchServer(options: ServerOptions) {
     return Boolean(expiresAt && expiresAt > Date.now());
   }
 
-  function handleChat(message: TwitchChatMessage): void {
+  function handleChat(message: TwitchChatMessage) {
+    const filtered = rounds.proposalIsBlocked(message.text);
     const proposal = rounds.addProposal(message.userId, message.userName, message.text);
+    if (filtered) filteredCount += 1;
     if (/^[123]$/.test(message.text.trim())) rounds.vote(message.userId, Number(message.text.trim()));
-    broadcast("chat:message", message);
+    const visibleMessage = filtered ? { ...message, text: "[filtered]", filtered: true } : { ...message, filtered: false };
+    broadcast("chat:message", visibleMessage);
     if (proposal) broadcast("proposal:added", proposal);
     broadcastSnapshot();
+    return { proposal, filtered, message: visibleMessage.text };
   }
 
   async function enterVote(): Promise<ReturnType<RoundStore["snapshot"]>> {
@@ -254,12 +259,13 @@ export function createChaosPatchServer(options: ServerOptions) {
     const message = request.body?.message?.trim();
     if (!message) return reply.code(400).send({ error: "Message is required" });
     const userName = request.body?.userName?.trim() || "mock_viewer";
-    handleChat({ id: randomUUID(), userId: `mock:${userName}`, userName, text: message, sentAt: new Date().toISOString() });
-    return { ok: true };
+    const result = handleChat({ id: randomUUID(), userId: `mock:${userName}`, userName, text: message, sentAt: new Date().toISOString() });
+    return { ok: true, filtered: result.filtered, message: result.message };
   });
 
   app.post("/api/mock/script", async () => {
     paused = true;
+    filteredCount = 0;
     rounds.startPitch();
     scriptedIdeas.forEach((idea, index) => {
       handleChat({
@@ -279,6 +285,7 @@ export function createChaosPatchServer(options: ServerOptions) {
 
   app.post("/api/session/start", async () => {
     paused = false;
+    filteredCount = 0;
     const round = rounds.start();
     broadcastSnapshot();
     return { round };
@@ -294,6 +301,7 @@ export function createChaosPatchServer(options: ServerOptions) {
   app.post("/api/session/advance", async () => {
     const current = rounds.snapshot();
     const round = current.phase === "pitch" ? await enterVote() : rounds.advance();
+    if (round.phase === "play") filteredCount = 0;
     if (round.phase === "pitch") announcePitch(round);
     broadcastSnapshot();
     return { round };
@@ -364,7 +372,9 @@ export function createChaosPatchServer(options: ServerOptions) {
 
   const timer = setInterval(() => {
     if (paused) return;
+    const phaseBeforeTick = rounds.snapshot().phase;
     const expiredPhase = rounds.tick();
+    if (phaseBeforeTick !== "play" && rounds.snapshot().phase === "play") filteredCount = 0;
     broadcastSnapshot();
     if (expiredPhase === "pitch") {
       void enterVote();
