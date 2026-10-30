@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { applyPatch, createGameState, resizeGame, restartGame, type GameState } from "@chaos-patch/game";
 import { defaultPatchParams, type PatchV1 } from "@chaos-patch/schema";
 import { advanceGameFrame, bestSurvivalSeconds, canRestartRun } from "../gameRuntime";
-import { arenaHudCopy, gameVisualSources, renderEffectProfile, type EmoteCatalog } from "../gameVisuals";
+import { arenaHudCopy, gameVisualSources, obstacleSpawnScale, renderEffectProfile, scorePulseScale, type EmoteCatalog } from "../gameVisuals";
 import { PatchHealthGuard } from "../patchHealth";
 
 type Props = {
@@ -27,12 +27,14 @@ export function GameCanvas({ patch, paused = false, emoteCatalog = emptyCatalog,
   const imageCacheRef = useRef(new Map<string, HTMLImageElement>());
   const reportedVersionRef = useRef<number | null>(null);
   const bestSecondsRef = useRef(0);
+  const hitAtRef = useRef<number | null>(null);
   const [alive, setAlive] = useState(true);
   const patchVersion = patch?.version ?? null;
   const arenaTitle = patch?.params.labelTitle ?? defaultPatchParams.labelTitle;
 
   const restart = () => {
     stateRef.current = restartGame(stateRef.current);
+    hitAtRef.current = null;
     setAlive(true);
   };
 
@@ -60,6 +62,7 @@ export function GameCanvas({ patch, paused = false, emoteCatalog = emptyCatalog,
     patchRef.current = patch;
     reportedVersionRef.current = null;
     healthGuardRef.current.reset();
+    hitAtRef.current = null;
     const fresh = createGameState(stateRef.current.width, stateRef.current.height);
     stateRef.current = patch ? applyPatch(fresh, patch) : fresh;
     const obstacleImageUrl = gameVisualSources(
@@ -107,6 +110,7 @@ export function GameCanvas({ patch, paused = false, emoteCatalog = emptyCatalog,
       const wasAlive = stateRef.current.alive;
       stateRef.current = advanceGameFrame(stateRef.current, delta, inputRef.current, pausedRef.current);
       if (!pausedRef.current && wasAlive && !stateRef.current.alive) {
+        hitAtRef.current = now;
         bestSecondsRef.current = bestSurvivalSeconds(bestSecondsRef.current, stateRef.current.elapsed);
         setAlive(false);
         const activePatch = patchRef.current;
@@ -126,7 +130,7 @@ export function GameCanvas({ patch, paused = false, emoteCatalog = emptyCatalog,
         reportedVersionRef.current = activePatch.version;
         failureHandlerRef.current?.(activePatch.version, "low_fps");
       }
-      drawGame(context, stateRef.current, visualsRef.current, imageCacheRef.current, bestSecondsRef.current, pausedRef.current);
+      drawGame(context, stateRef.current, visualsRef.current, imageCacheRef.current, bestSecondsRef.current, pausedRef.current, hitAtRef.current === null ? Number.POSITIVE_INFINITY : now - hitAtRef.current);
       frame = requestAnimationFrame(render);
     };
     frame = requestAnimationFrame(render);
@@ -163,14 +167,15 @@ function drawGame(
   visuals: { emoteCatalog: EmoteCatalog; playerImageUrl: string | null },
   imageCache: Map<string, HTMLImageElement>,
   bestSeconds: number,
-  paused: boolean
+  paused: boolean,
+  hitAgeMs: number
 ) {
   const palettes = {
     default: ["#111219", "#c8ff3d", "#9146ff"], neon: ["#090713", "#3de0ff", "#ff3da6"],
     lava: ["#190b08", "#ffc46b", "#ff3d53"], ice: ["#07141a", "#efffff", "#3de0ff"], mono: ["#101010", "#ffffff", "#777777"]
   } as const;
   const [background, player, obstacle] = palettes[state.params.palette];
-  const effects = renderEffectProfile(state.params.cameraShake, state.params.fog, state.elapsed);
+  const effects = renderEffectProfile(state.params.cameraShake, state.params.fog, state.elapsed, hitAgeMs);
   const hud = arenaHudCopy(state.params.labelTitle, state.elapsed, bestSeconds);
   ctx.save();
   ctx.translate(effects.shakeX, effects.shakeY);
@@ -184,21 +189,22 @@ function drawGame(
   const sources = gameVisualSources(state.params.obstacleSprite, visuals.emoteCatalog, visuals.playerImageUrl);
   const obstacleImage = sources.obstacleImageUrl ? loadImage(imageCache, sources.obstacleImageUrl) : null;
   for (const item of state.obstacles) {
+    const visualRadius = item.radius * obstacleSpawnScale(item.y, item.radius, item.velocityY, state.params.gravity);
     ctx.save();
     ctx.globalAlpha = .22;
     ctx.fillStyle = "#ff3da6";
     ctx.beginPath();
-    ctx.ellipse(item.x, state.height - 18, item.radius * .8, Math.max(4, item.radius * .18), 0, 0, Math.PI * 2);
+    ctx.ellipse(item.x, state.height - 18, visualRadius * .8, Math.max(4, visualRadius * .18), 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
     if (obstacleImage?.complete && obstacleImage.naturalWidth > 0) {
-      ctx.drawImage(obstacleImage, item.x - item.radius, item.y - item.radius, item.radius * 2, item.radius * 2);
+      ctx.drawImage(obstacleImage, item.x - visualRadius, item.y - visualRadius, visualRadius * 2, visualRadius * 2);
     } else if (state.params.obstacleSprite === "square") {
       ctx.fillStyle = obstacle;
-      ctx.fillRect(item.x - item.radius, item.y - item.radius, item.radius * 2, item.radius * 2);
+      ctx.fillRect(item.x - visualRadius, item.y - visualRadius, visualRadius * 2, visualRadius * 2);
     } else {
       ctx.fillStyle = obstacle;
-      ctx.beginPath(); ctx.arc(item.x, item.y, item.radius, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(item.x, item.y, visualRadius, 0, Math.PI * 2); ctx.fill();
     }
   }
   const playerImage = sources.playerImageUrl ? loadImage(imageCache, sources.playerImageUrl) : null;
@@ -232,7 +238,9 @@ function drawGame(
   ctx.fillText("SURVIVED", 20, 22);
   ctx.fillText("BEST", 112, 22);
   ctx.fillStyle = "#efeff1";
-  ctx.font = "800 17px ui-monospace, monospace";
+  const scorePulse = scorePulseScale(state.elapsed);
+  ctx.fillStyle = scorePulse > 1 ? player : "#efeff1";
+  ctx.font = `800 ${17 * scorePulse}px ui-monospace, monospace`;
   ctx.fillText(hud.survived, 20, 42);
   ctx.fillText(hud.best, 112, 42);
   ctx.restore();
