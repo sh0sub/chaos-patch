@@ -50,6 +50,7 @@ h2 { margin:0; font-size:28px; letter-spacing:-.04em; }
 .button:disabled { opacity:.55; cursor:progress; }
 .button.primary { color:#10120b; background:var(--lime); }
 .button.twitch { color:#fff; background:var(--purple); }
+.button.demo { color:var(--lime); border:1px solid #465b29; background:#171b12; }
 .account { min-height:58px; display:flex; align-items:center; gap:12px; padding:10px 12px; border:1px solid var(--line); }
 .account div { display:grid; gap:2px; }
 .account small { color:#9999a2; }

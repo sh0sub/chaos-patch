@@ -59,6 +59,19 @@ export class RoundStore {
     return this.snapshot();
   }
 
+  startPitch(): BroadcastState {
+    this.votesByUser.clear();
+    this.state = {
+      ...this.state,
+      round: this.state.phase === "idle" ? Math.max(1, this.state.round || 1) : this.state.round + 1,
+      phase: "pitch",
+      remainingSeconds: this.phaseSeconds("pitch"),
+      proposals: [],
+      candidates: []
+    };
+    return this.snapshot();
+  }
+
   advance(voteCandidates?: Candidate[]): BroadcastState {
     const currentIndex = phases.indexOf(this.state.phase);
     const nextPhase = currentIndex < 0 || currentIndex === phases.length - 1 ? "play" : phases[currentIndex + 1]!;

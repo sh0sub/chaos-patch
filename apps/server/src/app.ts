@@ -33,6 +33,27 @@ type CandidateCompressor = (proposals: Proposal[]) => Promise<Candidate[]>;
 type CompileResult = { patch: PatchV1; round: ReturnType<RoundStore["snapshot"]> };
 type AnnouncementKind = "pitch" | "vote" | "apply";
 
+const scriptedIdeas = [
+  "giant Kappa rain",
+  "mirror the controls",
+  "make the floor lava",
+  "low gravity jumps",
+  "slippery ice physics",
+  "homing emotes",
+  "bouncy wall chaos",
+  "neon blackout",
+  "tiny streamer mode",
+  "super speed survival"
+] as const;
+
+const scriptedCandidates: Candidate[] = [
+  { id: "script-1", title: "Giant Kappa Rain", description: "Huge Kappas flood the arena", proposer: "demo_chat", difficulty: "chaos", votes: 0 },
+  { id: "script-2", title: "Mirror Controls", description: "Left and right trade places", proposer: "demo_chat", difficulty: "spicy", votes: 0 },
+  { id: "script-3", title: "Lava Floor", description: "Keep moving to survive", proposer: "demo_chat", difficulty: "mild", votes: 0 }
+];
+
+const scriptedVotes = [1, 1, 2, 1, 3, 1, 2, 1, 2, 1, 3, 2] as const;
+
 type ServerOptions = {
   twitch: TwitchPort;
   compileCandidate: Compiler;
@@ -235,6 +256,25 @@ export function createChaosPatchServer(options: ServerOptions) {
     const userName = request.body?.userName?.trim() || "mock_viewer";
     handleChat({ id: randomUUID(), userId: `mock:${userName}`, userName, text: message, sentAt: new Date().toISOString() });
     return { ok: true };
+  });
+
+  app.post("/api/mock/script", async () => {
+    paused = true;
+    rounds.startPitch();
+    scriptedIdeas.forEach((idea, index) => {
+      handleChat({
+        id: `script-message-${index + 1}`,
+        userId: `script:viewer-${index + 1}`,
+        userName: `viewer_${index + 1}`,
+        text: `!patch ${idea}`,
+        sentAt: new Date().toISOString()
+      });
+    });
+    rounds.advance(scriptedCandidates);
+    scriptedVotes.forEach((choice, index) => rounds.vote(`script:voter-${index + 1}`, choice));
+    const round = rounds.snapshot();
+    broadcastSnapshot();
+    return { round, seededProposals: scriptedIdeas.length, seededVotes: scriptedVotes.length };
   });
 
   app.post("/api/session/start", async () => {

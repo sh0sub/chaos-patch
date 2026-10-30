@@ -131,6 +131,28 @@ describe("Chaos Patch HTTP server", () => {
     await server.close();
   });
 
+  it("loads a complete scripted vote without Twitch or OpenAI", async () => {
+    const twitch = new FakeTwitch();
+    const server = createChaosPatchServer({
+      twitch,
+      compileCandidate: async () => patch,
+      sessionSecret: "test-session-secret-that-is-at-least-32-characters",
+      webOrigin: "http://localhost:5173",
+      tickMilliseconds: 10_000
+    });
+
+    const response = await server.inject({ method: "POST", url: "/api/mock/script" });
+    const round = response.json().round;
+
+    expect(response.statusCode).toBe(200);
+    expect(round.phase).toBe("vote");
+    expect(round.proposals).toHaveLength(10);
+    expect(round.candidates).toHaveLength(3);
+    expect(round.candidates.reduce((total: number, candidate: { votes: number }) => total + candidate.votes, 0)).toBe(12);
+    expect(twitch.chatMessages).toEqual([]);
+    await server.close();
+  });
+
   it("runs candidate compression when the timed pitch closes", async () => {
     let compressCalls = 0;
     const server = createChaosPatchServer({

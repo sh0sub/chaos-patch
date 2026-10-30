@@ -12,11 +12,23 @@ Built for the Codex x TwitchCon Hackathon (deadline November 2, 2026 at 2:00 PM 
 
 ## Local run
 
-Requirements: Node.js 22.12+, pnpm 10+, a confidential Twitch application with callback `http://localhost:3000/auth/callback`, and an OpenAI API key.
+Requirements: Node.js 22.12+ and pnpm 10+. Twitch and OpenAI credentials are optional for the scripted judge path.
+
+### No-Twitch judge path
+
+```bash
+pnpm install
+pnpm dev
+```
+
+Open <http://localhost:5173> and click **Run scripted demo**. It loads 10 seeded proposals, compresses them into three visible choices with 12 votes, and pauses at VOTE. Click **Compile winner** to apply the winning patch. The local fallback compiler works without Twitch or OpenAI credentials.
+
+### Live Twitch path
+
+A confidential Twitch application with callback `http://localhost:3000/auth/callback` is required. An OpenAI API key enables AI compression and compilation; without it, safe local fallbacks remain available.
 
 ```bash
 bash scripts/setup-secrets.sh
-pnpm install
 pnpm dev
 ```
 

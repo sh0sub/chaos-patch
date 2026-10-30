@@ -203,6 +203,7 @@ export function App() {
         <aside className="control-panel">
           <div className="control-head"><p className="eyebrow">CONTROL ROOM</p><h2>Run the chaos</h2></div>
           {!snapshot.twitch.authenticated ? <a className="button twitch" href="/auth/twitch">Connect current Twitch account</a> : <div className="account"><span className="signal connected" /><div><b>{snapshot.twitch.user?.display_name}</b><small>EventSub {snapshot.twitch.eventSub}</small></div></div>}
+          {!snapshot.twitch.authenticated && <button className="button demo" disabled={busy} onClick={() => void action("/api/mock/script")}>Run scripted demo</button>}
           <div className="obs-source">
             <div><span>02 · OBS SOURCE</span><a href="/overlay" target="_blank" rel="noreferrer">Open overlay ↗</a></div>
             <code>{obsUrl}</code>
@@ -264,7 +265,7 @@ export function App() {
           {marker && <p className="marker-result" role="status">{markerStatus(marker)} · private in Video Producer</p>}
           {snapshot.round.activePatch && <button className="rollback-button" disabled={busy} onClick={() => void action("/api/session/rollback", { version: snapshot.round.activePatch?.version, reason: "manual" })}>Rollback active patch</button>}
           {error && <p className="error-message" role="alert">{error}</p>}
-          <p className="fineprint">Mock input is for rehearsal only. Live mode listens to this account through EventSub WebSockets.</p>
+          <p className="fineprint">Scripted demo needs no Twitch account. Manual mock input is for rehearsal only; live mode listens through EventSub WebSockets.</p>
         </aside>
       </section>
 

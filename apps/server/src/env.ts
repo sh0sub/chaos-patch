@@ -10,8 +10,8 @@ dotenv.config({ path: path.resolve(here, "../../../.env.local") });
 const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(3000),
   WEB_ORIGIN: z.string().url().default("http://localhost:5173"),
-  TWITCH_CLIENT_ID: z.string().min(1),
-  TWITCH_CLIENT_SECRET: z.string().min(1),
+  TWITCH_CLIENT_ID: z.string().default(""),
+  TWITCH_CLIENT_SECRET: z.string().default(""),
   TWITCH_REDIRECT_URI: z.string().url().default("http://localhost:3000/auth/callback"),
   OPENAI_API_KEY: z.string().optional().default(""),
   OPENAI_MODEL: z.string().default("gpt-4o-mini"),
