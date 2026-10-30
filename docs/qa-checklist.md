@@ -23,7 +23,7 @@ Work top-down. Add or update a focused test before each fix, keep `pnpm check` g
 
 ## P2 · Overlay (M3–M5) design spec
 
-- [ ] Minimum text sizes on the 1920×1080 overlay: body ≥28 px, captions ≥20 px, right-rail mono ≥22 px, version ≥36 px. Current sidecar (Patch Credits, Live Patch Notes, Chat, NEXT bar, mode label) is 9–12 px and unreadable on the mobile Twitch player.
+- [x] Minimum text sizes on the 1920×1080 overlay: body ≥28 px, captions ≥20 px, right-rail mono ≥22 px, version ≥36 px. Current sidecar (Patch Credits, Live Patch Notes, Chat, NEXT bar, mode label) is 9–12 px and unreadable on the mobile Twitch player.
 - [ ] VOTE cards (M4): three cards 360×420, gap 40, centered 1160 px; number 72 px, title 32 px, description 24 px, proposer line, vote bar 16 px, countdown 64 px. Current: number 28 px, description 14 px, bar 12 px, countdown 34 px.
 - [ ] VOTE: leading card gets a `LEADING` chip plus the lime border; vote bars use Twitch purple `#9146FF` (not lime); bar animates with a ~250 ms spring; countdown pulses 1.0→1.15 during the last 5 s; tie = both cards white border until the timer ends.
 - [ ] PITCH (M4 top): dim the paused game to 60 %, top banner 900×96 `PATCH PITCH — !patch <idea> · 00:30`, bottom ticker streaming incoming proposals with nick in `#9146FF`, right rail `{n} ideas` count-up.
