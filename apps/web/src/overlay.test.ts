@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { BroadcastState } from "@chaos-patch/schema";
-import { createApplyPresentation, createOverlayPresentation, createOverlayRail, createPitchPresentation } from "./overlay";
+import { createApplyPresentation, createCompilePresentation, createOverlayPresentation, createOverlayRail, createPitchPresentation } from "./overlay";
 
 const voteRound: BroadcastState = {
   round: 7,
@@ -68,6 +68,15 @@ describe("broadcast overlay presentation", () => {
         { userName: "tom", text: "lava floor" }
       ]
     });
+  });
+
+  it("orders compiler output by patch field and finishes on safety", () => {
+    expect(createCompilePresentation(voteRound)).toEqual([
+      "title ← Giant Emotes",
+      "params diff ← bounded knobs",
+      "notes ← generating patch notes",
+      "safety ok"
+    ]);
   });
 
   it("builds the artifact side rail in credits, notes, chat order", () => {

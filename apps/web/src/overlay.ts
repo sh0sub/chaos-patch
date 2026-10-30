@@ -39,6 +39,16 @@ export function createPitchPresentation(round: BroadcastState) {
   };
 }
 
+export function createCompilePresentation(round: BroadcastState) {
+  const winner = [...round.candidates].sort((a, b) => b.votes - a.votes)[0];
+  return [
+    `title ← ${winner?.title ?? "awaiting winner"}`,
+    "params diff ← bounded knobs",
+    "notes ← generating patch notes",
+    "safety ok"
+  ];
+}
+
 export function createOverlayRail(round: BroadcastState, chat: ChatLine[]) {
   const credits = Array.from(round.patchHistory.reduce((counts, patch) => {
     counts.set(patch.proposer, (counts.get(patch.proposer) ?? 0) + 1);

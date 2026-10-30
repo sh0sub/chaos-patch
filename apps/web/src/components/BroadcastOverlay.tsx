@@ -1,6 +1,6 @@
 import type { BroadcastState, PatchV1 } from "@chaos-patch/schema";
 import type { EmoteCatalog } from "../gameVisuals";
-import { createApplyPresentation, createOverlayPresentation, createOverlayRail, createPitchPresentation } from "../overlay";
+import { createApplyPresentation, createCompilePresentation, createOverlayPresentation, createOverlayRail, createPitchPresentation } from "../overlay";
 import { GameCanvas } from "./GameCanvas";
 
 type ChatLine = { userName: string; text: string };
@@ -23,6 +23,7 @@ export function BroadcastOverlay({ round, twitchUser, eventSubStatus, chat, patc
   const rail = createOverlayRail(round, chat);
   const applyPresentation = createApplyPresentation(round);
   const pitchPresentation = createPitchPresentation(round);
+  const compilePresentation = createCompilePresentation(round);
 
   return (
     <main className={`broadcast-overlay phase-${round.phase}`}>
@@ -83,11 +84,8 @@ export function BroadcastOverlay({ round, twitchUser, eventSubStatus, chat, patc
 
             {round.phase === "compile" && (
               <div className="broadcast-compile phase-card" role="status">
-                <span>CHAOS COMPILER</span>
-                <strong>$ chaos compile --winner</strong>
-                <code>schema PatchV1 (strict)</code>
-                <code>allowed knobs only · safety guard armed</code>
-                <b>{compileError ?? "COMPILING…"}</b>
+                <header><span>CHAOS COMPILER</span><i className="compile-cursor" aria-hidden="true" /></header>
+                {compilePresentation.map((line, index) => <code style={{ animationDelay: `${index * 380}ms` }} key={line}>{line}</code>)}
               </div>
             )}
 

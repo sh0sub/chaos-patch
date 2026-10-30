@@ -27,7 +27,7 @@ Work top-down. Add or update a focused test before each fix, keep `pnpm check` g
 - [x] VOTE cards (M4): three cards 360×420, gap 40, centered 1160 px; number 72 px, title 32 px, description 24 px, proposer line, vote bar 16 px, countdown 64 px. Current: number 28 px, description 14 px, bar 12 px, countdown 34 px.
 - [x] VOTE: leading card gets a `LEADING` chip plus the lime border; vote bars use Twitch purple `#9146FF` (not lime); bar animates with a ~250 ms spring; countdown pulses 1.0→1.15 during the last 5 s; tie = both cards white border until the timer ends.
 - [x] PITCH (M4 top): dim the paused game to 60 %, top banner 900×96 `PATCH PITCH — !patch <idea> · 00:30`, bottom ticker streaming incoming proposals with nick in `#9146FF`, right rail `{n} ideas` count-up.
-- [ ] COMPILE (M5): 760×240 terminal, mono 26 px, cyan cursor, lines typed in the order the LLM fields arrive (title → params diff → notes → `safety ok`). Current card is static text.
+- [x] COMPILE (M5): 760×240 terminal, mono 26 px, cyan cursor, lines typed in the order the LLM fields arrive (title → params diff → notes → `safety ok`). Current card is static text.
 - [ ] APPLY (M5): 150 ms RGB-split glitch → patch-note card slides in 400 ms ease-out-back → hold 3.5 s → fade. Current: 360 ms blur fade only.
 - [ ] Rollback: 1 s magenta border on the game frame plus `ROLLBACK → v{restored}` text; current card text says `ROLLBACK COMPLETE` without the arrow/version.
 - [ ] Game feel: 120 ms scale pop on spawn, shake on hit (independent of the `cameraShake` knob), score pulse every 10 s survived.
