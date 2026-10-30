@@ -6,6 +6,7 @@ import { createChaosPatchServer, type TwitchPort } from "../src/app";
 class FakeTwitch extends EventEmitter implements TwitchPort {
   exchangeCodes: string[] = [];
   connectCalls = 0;
+  chatMessages: string[] = [];
   clipTitles: string[] = [];
   markerDescriptions: string[] = [];
   emotes = [{ id: "25", name: "Kappa", url: "https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/3.0" }];
@@ -15,7 +16,7 @@ class FakeTwitch extends EventEmitter implements TwitchPort {
     return { id: "1", login: "tester", display_name: "Tester", profile_image_url: "" };
   }
   async connectEventSub() { this.connectCalls += 1; }
-  async sendChatMessage() {}
+  async sendChatMessage(message: string) { this.chatMessages.push(message); }
   async listEmotes() { return this.emotes; }
   async createClip(title: string) {
     this.clipTitles.push(title);
@@ -32,6 +33,13 @@ class FakeTwitch extends EventEmitter implements TwitchPort {
   }
   status() {
     return { authenticated: false, eventSub: "disconnected" as const, lastKeepaliveAt: null, user: null, error: null };
+  }
+}
+
+class FailingChatTwitch extends FakeTwitch {
+  override async sendChatMessage(message: string) {
+    this.chatMessages.push(message);
+    throw new Error("Twitch rate limited the bot");
   }
 }
 
@@ -153,6 +161,63 @@ describe("Chaos Patch HTTP server", () => {
       phase: "vote",
       candidates: [{ id: "timed-1", title: "Timed Candidate" }]
     });
+    await server.close();
+  });
+
+  it("announces pitch, vote, and applied patch transitions in Twitch chat", async () => {
+    const twitch = new FakeTwitch();
+    const candidates = [
+      { id: "1", title: "Giant Emotes", description: "Huge Kappas", proposer: "viewer", difficulty: "chaos" as const, votes: 0 },
+      { id: "2", title: "Mirror Controls", description: "Swap directions", proposer: "chat", difficulty: "spicy" as const, votes: 0 },
+      { id: "3", title: "Lava Floor", description: "Floor burns", proposer: "chat", difficulty: "mild" as const, votes: 0 }
+    ];
+    const server = createChaosPatchServer({
+      twitch,
+      compileCandidate: async () => patch,
+      compressProposals: async () => candidates,
+      sessionSecret: "test-session-secret-that-is-at-least-32-characters",
+      webOrigin: "http://localhost:5173",
+      tickMilliseconds: 10_000
+    });
+
+    await server.inject({ method: "POST", url: "/api/session/start" });
+    await server.inject({ method: "POST", url: "/api/session/advance" });
+    await server.inject({ method: "POST", url: "/api/session/advance" });
+    await server.inject({ method: "POST", url: "/api/mock/chat", payload: { userName: "voter", message: "1" } });
+    await server.inject({ method: "POST", url: "/api/session/compile" });
+    await waitFor(() => twitch.chatMessages.length === 3);
+
+    expect(twitch.chatMessages).toEqual([
+      "PATCH PITCH (30s) — !patch <your idea> to change the game. Current v1",
+      "1) Giant Emotes 2) Mirror Controls 3) Lava Floor — type 1, 2 or 3",
+      "v2 applied: Test Patch — proposed by @viewer (1 votes)"
+    ]);
+    await server.close();
+  });
+
+  it("keeps round transitions non-blocking when Twitch announcements fail", async () => {
+    const twitch = new FailingChatTwitch();
+    const server = createChaosPatchServer({
+      twitch,
+      compileCandidate: async () => patch,
+      sessionSecret: "test-session-secret-that-is-at-least-32-characters",
+      webOrigin: "http://localhost:5173",
+      tickMilliseconds: 10_000
+    });
+
+    await server.inject({ method: "POST", url: "/api/session/start" });
+    const pitch = await server.inject({ method: "POST", url: "/api/session/advance" });
+    const vote = await server.inject({ method: "POST", url: "/api/session/advance" });
+    await server.inject({ method: "POST", url: "/api/mock/chat", payload: { userName: "voter", message: "1" } });
+    const applied = await server.inject({ method: "POST", url: "/api/session/compile" });
+    const duplicate = await server.inject({ method: "POST", url: "/api/session/compile" });
+    await waitFor(() => twitch.chatMessages.length === 3);
+
+    expect(pitch.json().round.phase).toBe("pitch");
+    expect(vote.json().round.phase).toBe("vote");
+    expect(applied.statusCode).toBe(200);
+    expect(duplicate.statusCode).toBe(200);
+    expect(twitch.chatMessages).toHaveLength(3);
     await server.close();
   });
 
@@ -390,4 +455,13 @@ async function waitForRoundPhase(
     await new Promise((resolve) => setTimeout(resolve, 1));
   }
   throw new Error(`Timed out waiting for round phase ${phase}`);
+}
+
+async function waitFor(predicate: () => boolean, timeoutMilliseconds = 500) {
+  const deadline = Date.now() + timeoutMilliseconds;
+  while (Date.now() < deadline) {
+    if (predicate()) return;
+    await new Promise((resolve) => setTimeout(resolve, 1));
+  }
+  throw new Error("Timed out waiting for condition");
 }

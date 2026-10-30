@@ -31,6 +31,7 @@ type Compiler = (
 ) => Promise<PatchV1>;
 type CandidateCompressor = (proposals: Proposal[]) => Promise<Candidate[]>;
 type CompileResult = { patch: PatchV1; round: ReturnType<RoundStore["snapshot"]> };
+type AnnouncementKind = "pitch" | "vote" | "apply";
 
 type ServerOptions = {
   twitch: TwitchPort;
@@ -50,7 +51,31 @@ export function createChaosPatchServer(options: ServerOptions) {
   let compilePromise: Promise<CompileResult> | null = null;
   let completedCompile: { roundNumber: number; result: CompileResult } | null = null;
   let candidateCompressionPromise: Promise<ReturnType<RoundStore["snapshot"]>> | null = null;
+  const announcementsByRound = new Map<number, Set<AnnouncementKind>>();
   let paused = false;
+
+  function announce(kind: AnnouncementKind, roundNumber: number, message: string): void {
+    const sent = announcementsByRound.get(roundNumber) ?? new Set<AnnouncementKind>();
+    if (sent.has(kind)) return;
+    sent.add(kind);
+    announcementsByRound.set(roundNumber, sent);
+    void options.twitch.sendChatMessage(message.slice(0, 500)).catch((error) => {
+      app.log.warn(error, `Twitch ${kind} announcement failed`);
+    });
+  }
+
+  function announcePitch(round: ReturnType<RoundStore["snapshot"]>): void {
+    announce(
+      "pitch",
+      round.round,
+      `PATCH PITCH (30s) — !patch <your idea> to change the game. Current v${round.version}`
+    );
+  }
+
+  function announceVote(round: ReturnType<RoundStore["snapshot"]>): void {
+    const choices = round.candidates.map((candidate, index) => `${index + 1}) ${candidate.title}`).join(" ");
+    announce("vote", round.round, `${choices} — type 1, 2 or 3`);
+  }
 
   function broadcast(type: string, payload: unknown): void {
     const message = JSON.stringify({ type, payload });
@@ -106,6 +131,7 @@ export function createChaosPatchServer(options: ServerOptions) {
         candidates = compressProposalsFallback(current.proposals);
       }
       const round = rounds.snapshot().phase === "pitch" ? rounds.advance(candidates) : rounds.snapshot();
+      if (round.phase === "vote") announceVote(round);
       broadcastSnapshot();
       return round;
     })();
@@ -227,6 +253,7 @@ export function createChaosPatchServer(options: ServerOptions) {
   app.post("/api/session/advance", async () => {
     const current = rounds.snapshot();
     const round = current.phase === "pitch" ? await enterVote() : rounds.advance();
+    if (round.phase === "pitch") announcePitch(round);
     broadcastSnapshot();
     return { round };
   });
@@ -261,6 +288,11 @@ export function createChaosPatchServer(options: ServerOptions) {
         rounds.settingsSnapshot().intensity
       );
       const round = rounds.apply(patch);
+      announce(
+        "apply",
+        round.round,
+        `v${patch.version} applied: ${patch.title} — proposed by @${patch.proposer} (${winner.votes} votes)`
+      );
       broadcast("patch:applied", patch);
       broadcastSnapshot();
       const result = { patch, round };
@@ -280,6 +312,8 @@ export function createChaosPatchServer(options: ServerOptions) {
     broadcastSnapshot();
     if (expiredPhase === "pitch") {
       void enterVote();
+    } else if (expiredPhase === "play") {
+      announcePitch(rounds.snapshot());
     } else if (expiredPhase === "vote") {
       void compileWinner().catch((error) => {
         app.log.error(error);

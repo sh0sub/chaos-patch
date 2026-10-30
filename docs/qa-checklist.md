@@ -10,7 +10,7 @@ Work top-down. Add or update a focused test before each fix, keep `pnpm check` g
 
 ## P1 · Feature gaps vs MVP list
 
-- [ ] F10 chat announcements are missing. `/api/twitch/send` exists but nothing calls `sendChatMessage` on phase transitions. Add three automatic bot messages per round (≤500 chars, ≤2 emoji, max 3 per round):
+- [x] F10 chat announcements are missing. `/api/twitch/send` exists but nothing calls `sendChatMessage` on phase transitions. Add three automatic bot messages per round (≤500 chars, ≤2 emoji, max 3 per round):
   - PITCH start: `PATCH PITCH (30s) — !patch <your idea> to change the game. Current v{version}`
   - VOTE start: `1) {title} 2) {title} 3) {title} — type 1, 2 or 3`
   - APPLY: `v{version} applied: {title} — proposed by @{proposer} ({votes} votes)`
