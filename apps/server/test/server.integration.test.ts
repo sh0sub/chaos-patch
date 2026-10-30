@@ -221,6 +221,40 @@ describe("Chaos Patch HTTP server", () => {
     await server.close();
   });
 
+  it("retries a timed-out compile once and applies a safe fallback patch", async () => {
+    let compileCalls = 0;
+    const server = createChaosPatchServer({
+      twitch: new FakeTwitch(),
+      compileCandidate: async () => {
+        compileCalls += 1;
+        return await new Promise<PatchV1>(() => undefined);
+      },
+      compileTimeoutMilliseconds: 5,
+      sessionSecret: "test-session-secret-that-is-at-least-32-characters",
+      webOrigin: "http://localhost:5173",
+      tickMilliseconds: 10_000
+    });
+
+    await server.inject({ method: "POST", url: "/api/session/start" });
+    await server.inject({ method: "POST", url: "/api/session/advance" });
+    await server.inject({ method: "POST", url: "/api/session/advance" });
+    await server.inject({ method: "POST", url: "/api/mock/chat", payload: { userName: "voter", message: "1" } });
+    const response = await server.inject({ method: "POST", url: "/api/session/compile" });
+
+    expect(response.statusCode).toBe(200);
+    expect(compileCalls).toBe(2);
+    expect(response.json()).toMatchObject({
+      patch: {
+        version: 2,
+        title: "Safe Mode",
+        proposer: "system",
+        notes: ["Compile failed; applying a cached safe patch"]
+      },
+      round: { phase: "apply", version: 2 }
+    });
+    await server.close();
+  });
+
   it("exposes current Twitch emotes to the game renderer", async () => {
     const twitch = new FakeTwitch();
     const server = createChaosPatchServer({

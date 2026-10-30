@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { connectStateSocket, type StateSocket } from "./stateSocket";
+import { compileErrorFromSocketMessage, connectStateSocket, type StateSocket } from "./stateSocket";
 
 class FakeSocket implements StateSocket {
   onmessage: WebSocket["onmessage"] = null;
@@ -51,5 +51,14 @@ describe("connectStateSocket", () => {
     expect(sockets[1]?.close).toHaveBeenCalledOnce();
     sockets[1]?.emitClose();
     expect(scheduled).toHaveLength(1);
+  });
+
+  it("extracts a compile fallback message for the visible client state", () => {
+    expect(compileErrorFromSocketMessage(JSON.stringify({
+      type: "compile:error",
+      payload: { message: "compile failed → applying cached patch 'Safe Mode'" }
+    }))).toBe("compile failed → applying cached patch 'Safe Mode'");
+    expect(compileErrorFromSocketMessage(JSON.stringify({ type: "state:snapshot", payload: {} }))).toBeNull();
+    expect(compileErrorFromSocketMessage("not json")).toBeNull();
   });
 });

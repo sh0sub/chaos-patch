@@ -6,7 +6,7 @@ import { buildEmoteCatalog, type TwitchEmoteAsset } from "./gameVisuals";
 import { markerStatus } from "./marker";
 import { recapMetrics, type SessionRecap } from "./recap";
 import { overlaySourceUrl, parseBlockedTerms } from "./sessionControls";
-import { connectStateSocket } from "./stateSocket";
+import { compileErrorFromSocketMessage, connectStateSocket } from "./stateSocket";
 
 type TwitchStatus = { authenticated: boolean; eventSub: string; user: { display_name: string; profile_image_url: string } | null; error: string | null };
 type Snapshot = { twitch: TwitchStatus; round: BroadcastState; session: { paused: boolean; settings: SessionSettings } };
@@ -29,6 +29,7 @@ export function App() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [patchEvent, setPatchEvent] = useState<PatchEvent | null>(null);
+  const [compileError, setCompileError] = useState<string | null>(null);
   const [recap, setRecap] = useState<SessionRecap>(emptyRecap);
   const [marker, setMarker] = useState<MarkerResult | null>(null);
   const [emotes, setEmotes] = useState<TwitchEmoteAsset[]>([]);
@@ -46,6 +47,11 @@ export function App() {
     fetch("/api/status").then((response) => response.json()).then(setSnapshot).catch(() => undefined);
     const protocol = location.protocol === "https:" ? "wss:" : "ws:";
     return connectStateSocket(`${protocol}//${location.host}/ws`, (data) => {
+      const compileFailure = compileErrorFromSocketMessage(data);
+      if (compileFailure) {
+        setCompileError(compileFailure);
+        setError(compileFailure);
+      }
       const message = JSON.parse(data) as { type: string; payload: Snapshot | ChatLine | PatchV1 | RollbackEvent };
       if (message.type === "state:snapshot") setSnapshot(message.payload as Snapshot);
       if (message.type === "chat:message") setChat((current) => [message.payload as ChatLine, ...current].slice(0, 8));
@@ -56,6 +62,12 @@ export function App() {
       }
     });
   }, []);
+
+  useEffect(() => {
+    if (!compileError) return;
+    const timer = window.setTimeout(() => setCompileError(null), 5_000);
+    return () => window.clearTimeout(timer);
+  }, [compileError]);
 
   useEffect(() => {
     if (!patchEvent) return;
@@ -140,6 +152,7 @@ export function App() {
         eventSubStatus={snapshot.twitch.eventSub}
         chat={chat}
         patchEvent={patchEvent}
+        compileError={compileError}
         emoteCatalog={emoteCatalog}
         paused={snapshot.session.paused}
         onPatchFailure={rollbackPatch}

@@ -34,3 +34,14 @@ export function connectStateSocket(
     socket?.close();
   };
 }
+
+export function compileErrorFromSocketMessage(data: string): string | null {
+  try {
+    const message = JSON.parse(data) as { type?: unknown; payload?: { message?: unknown } };
+    return message.type === "compile:error" && typeof message.payload?.message === "string"
+      ? message.payload.message
+      : null;
+  } catch {
+    return null;
+  }
+}

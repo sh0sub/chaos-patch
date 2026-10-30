@@ -12,12 +12,13 @@ type Props = {
   eventSubStatus: string;
   chat: ChatLine[];
   patchEvent: PatchEvent | null;
+  compileError: string | null;
   emoteCatalog: EmoteCatalog;
   paused: boolean;
   onPatchFailure: (version: number, reason: "early_crash" | "low_fps") => void;
 };
 
-export function BroadcastOverlay({ round, twitchUser, eventSubStatus, chat, patchEvent, emoteCatalog, paused, onPatchFailure }: Props) {
+export function BroadcastOverlay({ round, twitchUser, eventSubStatus, chat, patchEvent, compileError, emoteCatalog, paused, onPatchFailure }: Props) {
   const presentation = createOverlayPresentation(round);
   const rail = createOverlayRail(round, chat);
 
@@ -80,7 +81,7 @@ export function BroadcastOverlay({ round, twitchUser, eventSubStatus, chat, patc
                 <strong>$ chaos compile --winner</strong>
                 <code>schema PatchV1 (strict)</code>
                 <code>allowed knobs only · safety guard armed</code>
-                <b>COMPILING…</b>
+                <b>{compileError ?? "COMPILING…"}</b>
               </div>
             )}
 
@@ -88,6 +89,7 @@ export function BroadcastOverlay({ round, twitchUser, eventSubStatus, chat, patc
               <div className={`broadcast-apply phase-card ${patchEvent?.kind ?? "applied"}`} role="status">
                 <span>{patchEvent?.kind === "rolled_back" ? "ROLLBACK COMPLETE" : "PATCH APPLIED"}</span>
                 <strong>v{round.activePatch.version} · {round.activePatch.title}</strong>
+                {compileError && <p className="compile-fallback">{compileError}</p>}
                 <p>{round.activePatch.notes[0]}</p>
                 <small>proposed by @{round.activePatch.proposer}</small>
               </div>

@@ -37,6 +37,7 @@ type ServerOptions = {
   twitch: TwitchPort;
   compileCandidate: Compiler;
   compressProposals?: CandidateCompressor;
+  compileTimeoutMilliseconds?: number;
   sessionSecret: string;
   webOrigin: string;
   tickMilliseconds?: number;
@@ -282,11 +283,26 @@ export function createChaosPatchServer(options: ServerOptions) {
     compilePromise = (async () => {
       const winner = rounds.winner();
       if (!winner) throw new Error("At least one chat vote is required before compiling");
-      const patch = await options.compileCandidate(
-        winner,
-        rounds.snapshot().version + 1,
-        rounds.settingsSnapshot().intensity
+      const nextVersion = rounds.snapshot().version + 1;
+      const compile = () => withTimeout(
+        options.compileCandidate(winner, nextVersion, rounds.settingsSnapshot().intensity),
+        options.compileTimeoutMilliseconds ?? 6_000,
+        "Patch compilation timed out"
       );
+      let patch: PatchV1;
+      try {
+        patch = await compile();
+      } catch (firstError) {
+        app.log.warn(firstError, "Patch compilation failed; retrying once");
+        try {
+          patch = await compile();
+        } catch (retryError) {
+          patch = safeFallbackPatch(nextVersion);
+          const message = `compile failed → applying cached patch '${patch.title}'`;
+          app.log.error(retryError, message);
+          broadcast("compile:error", { message });
+        }
+      }
       const round = rounds.apply(patch);
       announce(
         "apply",
@@ -343,4 +359,24 @@ export function createChaosPatchServer(options: ServerOptions) {
 
 function requestError(reply: { code: (status: number) => { send: (body: unknown) => unknown } }, error: unknown, fallback: string): unknown {
   return reply.code(500).send({ error: error instanceof Error ? error.message : fallback });
+}
+
+function withTimeout<T>(promise: Promise<T>, timeoutMilliseconds: number, message: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(message)), timeoutMilliseconds);
+    promise.then(
+      (value) => { clearTimeout(timer); resolve(value); },
+      (error) => { clearTimeout(timer); reject(error); }
+    );
+  });
+}
+
+function safeFallbackPatch(version: number): PatchV1 {
+  return {
+    version,
+    title: "Safe Mode",
+    proposer: "system",
+    notes: ["Compile failed; applying a cached safe patch"],
+    params: { obstacleScale: 0.8, spawnRate: 0.65, playerSpeed: 1.15 }
+  };
 }
