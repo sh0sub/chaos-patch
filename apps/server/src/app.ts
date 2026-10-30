@@ -35,6 +35,17 @@ type CandidateCompressor = (proposals: Proposal[]) => Promise<Candidate[]>;
 type CompileResult = { patch: PatchV1; round: ReturnType<RoundStore["snapshot"]> };
 type AnnouncementKind = "pitch" | "vote" | "apply";
 
+export function sessionDateInSeoul(date = new Date()): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(date);
+  const value = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? "";
+  return `${value("year")}-${value("month")}-${value("day")}`;
+}
+
 const scriptedIdeas = [
   "giant Kappa rain",
   "mirror the controls",
@@ -77,6 +88,9 @@ export function createChaosPatchServer(options: ServerOptions) {
   let completedCompile: { roundNumber: number; result: CompileResult } | null = null;
   let candidateCompressionPromise: Promise<ReturnType<RoundStore["snapshot"]>> | null = null;
   const announcementsByRound = new Map<number, Set<AnnouncementKind>>();
+  const votesByPatchVersion = new Map<number, number>();
+  const appliedAtByPatchVersion = new Map<number, string>();
+  let sessionDate = sessionDateInSeoul();
   let paused = false;
   let filteredCount = 0;
 
@@ -212,13 +226,32 @@ export function createChaosPatchServer(options: ServerOptions) {
   });
   app.get("/api/session/recap", async () => {
     const state = rounds.snapshot();
+    const timeline = state.patchHistory.map(({ version, title, proposer, status }) => ({
+      version,
+      title,
+      proposer,
+      status,
+      votes: votesByPatchVersion.get(version) ?? 0,
+      appliedAt: appliedAtByPatchVersion.get(version) ?? null
+    }));
+    const credits = Array.from(
+      timeline.reduce((contributors, entry) => contributors.set(entry.proposer, (contributors.get(entry.proposer) ?? 0) + 1), new Map<string, number>())
+    ).map(([proposer, patches]) => ({ proposer, patches })).sort((a, b) => b.patches - a.patches || a.proposer.localeCompare(b.proposer));
+    const twitchUser = options.twitch.status().user;
     return {
       round: state.round,
       build: state.version,
       applied: state.patchHistory.filter((entry) => entry.status === "applied").length,
       rolledBack: state.patchHistory.filter((entry) => entry.status === "rolled_back").length,
       activePatch: state.activePatch?.title ?? null,
-      recent: state.patchHistory.slice(0, 5).map(({ version, title, proposer, status }) => ({ version, title, proposer, status }))
+      patchCount: timeline.length,
+      contributorCount: credits.length,
+      sessionDate,
+      broadcaster: twitchUser ? { displayName: twitchUser.display_name, avatarUrl: twitchUser.profile_image_url } : null,
+      recent: timeline.slice(0, 5).map(({ version, title, proposer, status }) => ({ version, title, proposer, status })),
+      topPatches: [...timeline].sort((a, b) => b.votes - a.votes || b.version - a.version).slice(0, 3),
+      timeline,
+      credits
     };
   });
   app.get("/auth/twitch", async (_request, reply) => reply.redirect(options.twitch.authorizationUrl(createOauthState())));
@@ -288,6 +321,9 @@ export function createChaosPatchServer(options: ServerOptions) {
   app.post("/api/mock/script", async () => {
     paused = true;
     filteredCount = 0;
+    sessionDate = sessionDateInSeoul();
+    votesByPatchVersion.clear();
+    appliedAtByPatchVersion.clear();
     rounds.startPitch();
     scriptedIdeas.forEach((idea, index) => {
       handleChat({
@@ -308,6 +344,9 @@ export function createChaosPatchServer(options: ServerOptions) {
   app.post("/api/session/start", async () => {
     paused = false;
     filteredCount = 0;
+    sessionDate = sessionDateInSeoul();
+    votesByPatchVersion.clear();
+    appliedAtByPatchVersion.clear();
     const round = rounds.start();
     broadcastSnapshot();
     return { round };
@@ -376,6 +415,8 @@ export function createChaosPatchServer(options: ServerOptions) {
       }
       telemetry.recordCompile(performance.now() - compileStartedAt);
       const round = rounds.apply(patch);
+      votesByPatchVersion.set(patch.version, winner.votes);
+      appliedAtByPatchVersion.set(patch.version, new Date().toISOString());
       void createApplyClipAndAnnounce(round, patch, winner.votes);
       broadcast("patch:applied", patch);
       broadcastSnapshot();

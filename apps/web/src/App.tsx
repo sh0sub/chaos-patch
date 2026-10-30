@@ -8,7 +8,7 @@ import { buildEmoteCatalog, type TwitchEmoteAsset } from "./gameVisuals";
 import { markerStatus } from "./marker";
 import { overlayConnectionLabel } from "./overlayConnection";
 import { patchHistoryPresentation } from "./patchHistory";
-import { recapMetrics, type SessionRecap } from "./recap";
+import { recapMetrics, recapShareMessage, type SessionRecap } from "./recap";
 import { runtimeStatusPresentation } from "./runtimeStatus";
 import { overlaySourceUrl, parseBlockedTerms } from "./sessionControls";
 import { compileErrorFromSocketMessage, connectStateSocket } from "./stateSocket";
@@ -27,7 +27,7 @@ const empty: Snapshot = {
   session: { paused: false, settings: defaultSessionSettings, filteredCount: 0, overlayClients: 0 },
   telemetry: { chatMessagesPerMinute: 0, lastCompileMs: null }
 };
-const emptyRecap: SessionRecap = { round: 0, build: 1, applied: 0, rolledBack: 0, activePatch: null, recent: [] };
+const emptyRecap: SessionRecap = { round: 0, build: 1, applied: 0, rolledBack: 0, activePatch: null, patchCount: 0, contributorCount: 0, sessionDate: "", broadcaster: null, recent: [], topPatches: [], timeline: [], credits: [] };
 
 export function App() {
   const [snapshot, setSnapshot] = useState<Snapshot>(empty);
@@ -43,8 +43,10 @@ export function App() {
   const [settingsDraft, setSettingsDraft] = useState<SessionSettings>(defaultSessionSettings);
   const [blockedTermsText, setBlockedTermsText] = useState(defaultSessionSettings.blockedTerms.join(", "));
   const [obsCopied, setObsCopied] = useState(false);
+  const [recapShareStatus, setRecapShareStatus] = useState("Share recap");
   const settingsKeyRef = useRef("");
   const isBroadcastOverlay = window.location.pathname === "/overlay";
+  const isRecapPage = window.location.pathname === "/recap";
   const statusPresentation = twitchStatusPresentation(snapshot.twitch.eventSub, snapshot.twitch.authenticated ? snapshot.twitch.user?.display_name ?? "Twitch" : null);
   const recapKey = snapshot.round.patchHistory.map(({ version, status }) => `${version}:${status}`).join("|");
   const emoteCatalog = useMemo(() => buildEmoteCatalog(emotes), [emotes]);
@@ -158,6 +160,25 @@ export function App() {
     }
   };
   const saveSettings = () => action("/api/session/settings", { ...settingsDraft, blockedTerms: parseBlockedTerms(blockedTermsText) });
+  const shareRecap = async () => {
+    const url = `${window.location.origin}/recap`;
+    const message = recapShareMessage(recap, url);
+    let copied = false;
+    try {
+      await navigator.clipboard.writeText(url);
+      copied = true;
+    } catch {
+      // The chat announcement can still succeed if clipboard permission is unavailable.
+    }
+    try {
+      const response = await fetch("/api/twitch/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message }) });
+      if (copied) setRecapShareStatus(response.ok ? "Link copied + announced" : "Link copied");
+      else setRecapShareStatus(response.ok ? "Announced in chat" : "Share failed");
+    } catch {
+      setRecapShareStatus(copied ? "Link copied" : "Share failed");
+    }
+    window.setTimeout(() => setRecapShareStatus("Share recap"), 1800);
+  };
 
   if (isBroadcastOverlay) {
     return (
@@ -172,6 +193,33 @@ export function App() {
         paused={snapshot.session.paused}
         onPatchFailure={rollbackPatch}
       />
+    );
+  }
+
+  if (isRecapPage) {
+    return (
+      <main className="recap-page">
+        <nav className="recap-nav"><a className="brand" href="/"><span className="brand-mark">CP</span><span>CHAOS PATCH</span></a><a href="/">← Back to control room</a></nav>
+        <header className="recap-hero">
+          <div className="recap-avatar">{recap.broadcaster?.avatarUrl ? <img src={recap.broadcaster.avatarUrl} alt="" /> : <span>CP</span>}</div>
+          <div><p className="eyebrow">SESSION RECAP · {recap.sessionDate || "TODAY"}</p><h1>{recap.broadcaster?.displayName ?? "Chaos Patch"}<br /><em>shipped the chaos.</em></h1></div>
+          <dl><div><dt>PATCHES</dt><dd>{recap.patchCount}</dd></div><div><dt>CONTRIBUTORS</dt><dd>{recap.contributorCount}</dd></div></dl>
+        </header>
+
+        <section className="recap-section"><div className="feed-head"><div><p className="eyebrow">LEADERBOARD</p><h2>Top 3 by votes</h2></div></div>
+          <div className="recap-top-three">{recap.topPatches.length ? recap.topPatches.map((entry, index) => <article key={entry.version}><span>0{index + 1}</span><h3>{entry.title}</h3><p>by @{entry.proposer}</p><strong>{entry.votes} VOTES</strong></article>) : <p>No voted patches yet.</p>}</div>
+        </section>
+
+        <section className="recap-section"><div className="feed-head"><div><p className="eyebrow">BUILD LOG</p><h2>Full patch timeline</h2></div></div>
+          <ol className="recap-timeline">{recap.timeline.length ? recap.timeline.map((entry) => <li key={entry.version}><time>{entry.appliedAt ? new Date(entry.appliedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "--:--"}</time><code>BUILD v{entry.version}</code><strong>{entry.title}</strong><span>@{entry.proposer} · {entry.votes} votes · {entry.status.replace("_", " ")}</span></li>) : <li>No patches shipped yet.</li>}</ol>
+        </section>
+
+        <section className="recap-section"><div className="feed-head"><div><p className="eyebrow">COMMUNITY</p><h2>Patch Credits</h2></div></div>
+          <div className="credit-cloud">{recap.credits.length ? recap.credits.map((credit) => <span style={{ fontSize: `${Math.min(18 + credit.patches * 6, 42)}px` }} key={credit.proposer}>@{credit.proposer}<small>{credit.patches}</small></span>) : <p>Contributors will appear after the first patch.</p>}</div>
+        </section>
+
+        <footer className="recap-share"><div><p className="eyebrow">SHARE THE BUILD</p><h2>Chat made this.</h2></div><button type="button" onClick={() => void shareRecap()}>{recapShareStatus}</button></footer>
+      </main>
     );
   }
 
@@ -309,7 +357,7 @@ export function App() {
       </section>
 
       <section className="history" aria-labelledby="history-title">
-        <div className="feed-head"><div><p className="eyebrow">ROUND {recap.round || "—"} RECAP</p><h2 id="history-title">Patch history</h2></div><span>Crash within 6s → automatic rollback</span></div>
+        <div className="feed-head"><div><p className="eyebrow">ROUND {recap.round || "—"} RECAP</p><h2 id="history-title">Patch history</h2></div><span>Crash within 6s → automatic rollback · <a href="/recap">Open full recap ↗</a></span></div>
         <div className="recap-metrics">
           {recapMetrics(recap).map((metric) => <div key={metric.label}><span>{metric.label}</span><strong>{metric.value}</strong></div>)}
         </div>

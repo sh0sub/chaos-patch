@@ -1,7 +1,7 @@
 import { EventEmitter } from "node:events";
 import { describe, expect, it } from "vitest";
 import type { PatchV1 } from "@chaos-patch/schema";
-import { createChaosPatchServer, type TwitchPort } from "../src/app";
+import { createChaosPatchServer, sessionDateInSeoul, type TwitchPort } from "../src/app";
 
 class FakeTwitch extends EventEmitter implements TwitchPort {
   exchangeCodes: string[] = [];
@@ -63,6 +63,10 @@ const patch: PatchV1 = {
 };
 
 describe("Chaos Patch HTTP server", () => {
+  it("uses the Korean calendar date for submission recaps", () => {
+    expect(sessionDateInSeoul(new Date("2026-10-30T18:00:00.000Z"))).toBe("2026-10-31");
+  });
+
   it("applies validated session settings through the HTTP interface", async () => {
     const server = createChaosPatchServer({
       twitch: new FakeTwitch(),
@@ -524,14 +528,20 @@ describe("Chaos Patch HTTP server", () => {
 
     const response = await server.inject({ method: "GET", url: "/api/session/recap" });
     expect(response.statusCode).toBe(200);
-    expect(response.json()).toEqual({
+    expect(response.json()).toMatchObject({
       round: 1,
       build: 2,
       applied: 0,
       rolledBack: 1,
       activePatch: null,
-      recent: [{ version: 2, title: "Test Patch", proposer: "viewer", status: "rolled_back" }]
+      patchCount: 1,
+      contributorCount: 1,
+      recent: [{ version: 2, title: "Test Patch", proposer: "viewer", status: "rolled_back" }],
+      topPatches: [{ version: 2, title: "Test Patch", proposer: "viewer", votes: 1, status: "rolled_back" }],
+      timeline: [{ version: 2, title: "Test Patch", proposer: "viewer", votes: 1, status: "rolled_back" }],
+      credits: [{ proposer: "viewer", patches: 1 }]
     });
+    expect(response.json().sessionDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     await server.close();
   });
 
