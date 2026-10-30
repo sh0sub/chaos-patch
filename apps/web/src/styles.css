@@ -77,7 +77,7 @@ h2 { margin:0; font-size:28px; letter-spacing:-.04em; }
 .settings-title { display:flex; align-items:center; justify-content:space-between; }
 .settings-title b { color:var(--lime); font:700 10px "JetBrains Mono"; }
 .intensity-control { display:grid; grid-template-columns:repeat(3, 1fr); gap:1px; background:var(--line); }
-.intensity-control button { min-height:42px; border:0; color:#8e8e97; background:#18181b; cursor:pointer; text-transform:uppercase; font:700 10px "JetBrains Mono"; }
+.intensity-control button { min-height:48px; border:0; color:#8e8e97; background:#18181b; cursor:pointer; text-transform:uppercase; font:700 10px "JetBrains Mono"; }
 .intensity-control button.selected { color:#10120b; background:var(--lime); }
 .session-settings label { display:flex; justify-content:space-between; color:#b8b8c2; font-size:11px; }
 .session-settings output { color:var(--lime); font:700 10px "JetBrains Mono"; }
