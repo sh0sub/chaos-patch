@@ -202,6 +202,12 @@ code { font-family:"JetBrains Mono", monospace; }
 .broadcast-apply strong { display:block; margin:10px 0; font-size:clamp(32px, 4vw, 58px); letter-spacing:-.04em; }
 .broadcast-apply p { margin:0 0 12px; font-size:19px; }
 .broadcast-apply small { font:700 13px "JetBrains Mono"; }
+.broadcast-apply-notes { display:grid; gap:8px; margin:16px 0; padding:0; list-style:none; }
+.broadcast-apply-notes li { display:grid; grid-template-columns:76px 1fr; gap:12px; align-items:start; }
+.broadcast-apply-notes b { color:#10120b; font:800 11px "JetBrains Mono"; letter-spacing:.08em; }
+.broadcast-apply.rolled_back .broadcast-apply-notes b { color:var(--pink); }
+.broadcast-apply-notes span { font-size:16px; font-weight:700; }
+.broadcast-apply footer { display:flex; justify-content:space-between; gap:20px; }
 @keyframes patch-reveal { from { opacity:0; transform:translate(-50%, -16px) scale(.98); filter:blur(3px); } to { opacity:1; transform:translate(-50%, 0) scale(1); filter:blur(0); } }
 @keyframes compile-pulse { from { border-color:rgba(61,224,255,.45); } to { border-color:var(--cyan); } }
 @keyframes overlay-enter { from { opacity:0; transform:translate(-50%, -46%) scale(.98); } to { opacity:1; transform:translate(-50%, -50%) scale(1); } }

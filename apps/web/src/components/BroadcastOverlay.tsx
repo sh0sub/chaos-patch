@@ -1,6 +1,6 @@
 import type { BroadcastState, PatchV1 } from "@chaos-patch/schema";
 import type { EmoteCatalog } from "../gameVisuals";
-import { createOverlayPresentation, createOverlayRail } from "../overlay";
+import { createApplyPresentation, createOverlayPresentation, createOverlayRail } from "../overlay";
 import { GameCanvas } from "./GameCanvas";
 
 type ChatLine = { userName: string; text: string };
@@ -21,6 +21,7 @@ type Props = {
 export function BroadcastOverlay({ round, twitchUser, eventSubStatus, chat, patchEvent, compileError, emoteCatalog, paused, onPatchFailure }: Props) {
   const presentation = createOverlayPresentation(round);
   const rail = createOverlayRail(round, chat);
+  const applyPresentation = createApplyPresentation(round);
 
   return (
     <main className={`broadcast-overlay phase-${round.phase}`}>
@@ -90,8 +91,10 @@ export function BroadcastOverlay({ round, twitchUser, eventSubStatus, chat, patc
                 <span>{patchEvent?.kind === "rolled_back" ? "ROLLBACK COMPLETE" : "PATCH APPLIED"}</span>
                 <strong>v{round.activePatch.version} · {round.activePatch.title}</strong>
                 {compileError && <p className="compile-fallback">{compileError}</p>}
-                <p>{round.activePatch.notes[0]}</p>
-                <small>proposed by @{round.activePatch.proposer}</small>
+                <ul className="broadcast-apply-notes">
+                  {applyPresentation.notes.map((note) => <li key={`${note.label}-${note.text}`}><b>{note.label}</b><span>{note.text}</span></li>)}
+                </ul>
+                <footer><small>proposed by @{round.activePatch.proposer}</small><small>{applyPresentation.footer}</small></footer>
               </div>
             )}
           </div>

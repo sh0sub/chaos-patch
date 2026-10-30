@@ -16,7 +16,7 @@ Work top-down. Add or update a focused test before each fix, keep `pnpm check` g
   - APPLY: `v{version} applied: {title} — proposed by @{proposer} ({votes} votes)`
   - Swallow Helix errors (429/403) and never block the round on a failed send.
 - [x] COMPILE has no timeout or cached-patch fallback. If `compileCandidate` throws (network/timeout), the round sticks in `compile` forever (`tick()` returns null there). Spec: 6 s timeout → one retry → on failure apply a cached/seed patch and show `compile failed → applying cached patch '{title}'` on the overlay. The web client also ignores the `compile:error` WS message today.
-- [ ] Apply card shows only `notes[0]`. Render all notes (max 3) as a NEW/BALANCE list and add `{votes} votes · Round {n}` to the footer.
+- [x] Apply card shows only `notes[0]`. Render all notes (max 3) as a NEW/BALANCE list and add `{votes} votes · Round {n}` to the footer.
 - [ ] `labelTitle` is in `patchParamsSchema` and `defaultPatchParams` but is never drawn. Render it as the arena title (or drop it from the schema and the prompt).
 - [ ] Mock mode for judges: add a scripted proposal set (≥10 seeded `!patch` ideas + votes) runnable without a Twitch account, and document the no-Twitch path in README (today "Local run" requires a Twitch app + OpenAI key).
 - [ ] Blocked proposals are dropped silently. Show them in the dashboard chat wire as `[filtered]` in muted grey, and count `filtered` next to the proposal count.

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { BroadcastState } from "@chaos-patch/schema";
-import { createOverlayPresentation, createOverlayRail } from "./overlay";
+import { createApplyPresentation, createOverlayPresentation, createOverlayRail } from "./overlay";
 
 const voteRound: BroadcastState = {
   round: 7,
@@ -67,6 +67,29 @@ describe("broadcast overlay presentation", () => {
         { userName: "night_owl", text: "!patch bigger emotes" },
         { userName: "mina", text: "this is chaos" }
       ]
+    });
+  });
+
+  it("presents every applied patch note with vote and round context", () => {
+    const round: BroadcastState = {
+      ...voteRound,
+      phase: "apply",
+      activePatch: {
+        version: 6,
+        title: "Giant Emotes",
+        proposer: "kim",
+        notes: ["Kappa obstacles enabled", "Obstacle scale raised", "Spawn rate reduced"],
+        params: { obstacleSprite: "emote:Kappa", obstacleScale: 2.6, spawnRate: 0.8 }
+      }
+    };
+
+    expect(createApplyPresentation(round)).toEqual({
+      notes: [
+        { label: "NEW", text: "Kappa obstacles enabled" },
+        { label: "BALANCE", text: "Obstacle scale raised" },
+        { label: "BALANCE", text: "Spawn rate reduced" }
+      ],
+      footer: "41 votes · Round 7"
     });
   });
 });
