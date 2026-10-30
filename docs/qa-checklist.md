@@ -29,7 +29,7 @@ Work top-down. Add or update a focused test before each fix, keep `pnpm check` g
 - [x] PITCH (M4 top): dim the paused game to 60 %, top banner 900×96 `PATCH PITCH — !patch <idea> · 00:30`, bottom ticker streaming incoming proposals with nick in `#9146FF`, right rail `{n} ideas` count-up.
 - [x] COMPILE (M5): 760×240 terminal, mono 26 px, cyan cursor, lines typed in the order the LLM fields arrive (title → params diff → notes → `safety ok`). Current card is static text.
 - [x] APPLY (M5): 150 ms RGB-split glitch → patch-note card slides in 400 ms ease-out-back → hold 3.5 s → fade. Current: 360 ms blur fade only.
-- [ ] Rollback: 1 s magenta border on the game frame plus `ROLLBACK → v{restored}` text; current card text says `ROLLBACK COMPLETE` without the arrow/version.
+- [x] Rollback: 1 s magenta border on the game frame plus `ROLLBACK → v{restored}` text; current card text says `ROLLBACK COMPLETE` without the arrow/version.
 - [ ] Game feel: 120 ms scale pop on spawn, shake on hit (independent of the `cameraShake` knob), score pulse every 10 s survived.
 
 ## P3 · Dashboard (M1–M2) and states

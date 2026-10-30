@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { BroadcastState } from "@chaos-patch/schema";
-import { createApplyPresentation, createCompilePresentation, createOverlayPresentation, createOverlayRail, createPitchPresentation } from "./overlay";
+import { createApplyPresentation, createCompilePresentation, createOverlayPresentation, createOverlayRail, createPitchPresentation, createRollbackLabel } from "./overlay";
 
 const voteRound: BroadcastState = {
   round: 7,
@@ -77,6 +77,14 @@ describe("broadcast overlay presentation", () => {
       "notes ← generating patch notes",
       "safety ok"
     ]);
+  });
+
+  it("labels a rollback with the restored build version", () => {
+    expect(createRollbackLabel({ ...voteRound, activePatch: null })).toBe("ROLLBACK → v1");
+    expect(createRollbackLabel({
+      ...voteRound,
+      activePatch: { version: 4, title: "Stable Wind", notes: ["Safe wind"], proposer: "mina", params: { wind: 0.4 } }
+    })).toBe("ROLLBACK → v4");
   });
 
   it("builds the artifact side rail in credits, notes, chat order", () => {

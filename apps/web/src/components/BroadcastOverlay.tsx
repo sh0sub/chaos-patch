@@ -1,6 +1,6 @@
 import type { BroadcastState, PatchV1 } from "@chaos-patch/schema";
 import type { EmoteCatalog } from "../gameVisuals";
-import { createApplyPresentation, createCompilePresentation, createOverlayPresentation, createOverlayRail, createPitchPresentation } from "../overlay";
+import { createApplyPresentation, createCompilePresentation, createOverlayPresentation, createOverlayRail, createPitchPresentation, createRollbackLabel } from "../overlay";
 import { GameCanvas } from "./GameCanvas";
 
 type ChatLine = { userName: string; text: string };
@@ -24,9 +24,11 @@ export function BroadcastOverlay({ round, twitchUser, eventSubStatus, chat, patc
   const applyPresentation = createApplyPresentation(round);
   const pitchPresentation = createPitchPresentation(round);
   const compilePresentation = createCompilePresentation(round);
+  const rolledBack = patchEvent?.kind === "rolled_back";
+  const visiblePatch = round.activePatch ?? patchEvent?.patch ?? null;
 
   return (
-    <main className={`broadcast-overlay phase-${round.phase}`}>
+    <main className={`broadcast-overlay phase-${round.phase}${rolledBack ? " rollback-active" : ""}`}>
       <header className="broadcast-status">
         <div className="broadcast-brand"><span>CP</span>CHAOS PATCH <b>v{round.version}.0</b></div>
         <div className="broadcast-round">ROUND {round.round || "—"} · <strong>{paused ? "PAUSED" : presentation.phase}</strong></div>
@@ -89,15 +91,20 @@ export function BroadcastOverlay({ round, twitchUser, eventSubStatus, chat, patc
               </div>
             )}
 
-            {(round.phase === "apply" || patchEvent) && round.activePatch && (
+            {(round.phase === "apply" || patchEvent) && visiblePatch && (
               <div className={`broadcast-apply phase-card ${patchEvent?.kind ?? "applied"}`} role="status">
-                <span>{patchEvent?.kind === "rolled_back" ? "ROLLBACK COMPLETE" : "PATCH APPLIED"}</span>
-                <strong>v{round.activePatch.version} · {round.activePatch.title}</strong>
-                {compileError && <p className="compile-fallback">{compileError}</p>}
-                <ul className="broadcast-apply-notes">
-                  {applyPresentation.notes.map((note) => <li key={`${note.label}-${note.text}`}><b>{note.label}</b><span>{note.text}</span></li>)}
-                </ul>
-                <footer><small>proposed by @{round.activePatch.proposer}</small><small>{applyPresentation.footer}</small></footer>
+                <span>{rolledBack ? createRollbackLabel(round) : "PATCH APPLIED"}</span>
+                <strong>{rolledBack ? "SAFE BUILD RESTORED" : `v${visiblePatch.version} · ${visiblePatch.title}`}</strong>
+                {!rolledBack && compileError && <p className="compile-fallback">{compileError}</p>}
+                {!rolledBack && (
+                  <ul className="broadcast-apply-notes">
+                    {applyPresentation.notes.map((note) => <li key={`${note.label}-${note.text}`}><b>{note.label}</b><span>{note.text}</span></li>)}
+                  </ul>
+                )}
+                <footer>
+                  <small>{rolledBack ? "health guard restored a safe build" : `proposed by @${visiblePatch.proposer}`}</small>
+                  <small>{rolledBack ? createRollbackLabel(round) : applyPresentation.footer}</small>
+                </footer>
               </div>
             )}
           </div>
