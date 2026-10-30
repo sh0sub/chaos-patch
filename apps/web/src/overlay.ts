@@ -31,6 +31,14 @@ export function createOverlayPresentation(round: BroadcastState) {
   };
 }
 
+export function createPitchPresentation(round: BroadcastState) {
+  return {
+    timer: formatTimer(round.remainingSeconds),
+    ideaCount: `${round.proposals.length} ${round.proposals.length === 1 ? "idea" : "ideas"}`,
+    ticker: round.proposals.slice(-5).map(({ userName, text }) => ({ userName, text }))
+  };
+}
+
 export function createOverlayRail(round: BroadcastState, chat: ChatLine[]) {
   const credits = Array.from(round.patchHistory.reduce((counts, patch) => {
     counts.set(patch.proposer, (counts.get(patch.proposer) ?? 0) + 1);

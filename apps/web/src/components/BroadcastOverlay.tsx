@@ -1,6 +1,6 @@
 import type { BroadcastState, PatchV1 } from "@chaos-patch/schema";
 import type { EmoteCatalog } from "../gameVisuals";
-import { createApplyPresentation, createOverlayPresentation, createOverlayRail } from "../overlay";
+import { createApplyPresentation, createOverlayPresentation, createOverlayRail, createPitchPresentation } from "../overlay";
 import { GameCanvas } from "./GameCanvas";
 
 type ChatLine = { userName: string; text: string };
@@ -22,6 +22,7 @@ export function BroadcastOverlay({ round, twitchUser, eventSubStatus, chat, patc
   const presentation = createOverlayPresentation(round);
   const rail = createOverlayRail(round, chat);
   const applyPresentation = createApplyPresentation(round);
+  const pitchPresentation = createPitchPresentation(round);
 
   return (
     <main className={`broadcast-overlay phase-${round.phase}`}>
@@ -51,11 +52,14 @@ export function BroadcastOverlay({ round, twitchUser, eventSubStatus, chat, patc
             />
 
             {round.phase === "pitch" && (
-              <div className="broadcast-pitch phase-card">
-                <span>PATCH PITCH</span>
-                <strong><code>!patch</code> your idea</strong>
-                <small>{round.proposals.length} ideas received · chat designs the next build</small>
-              </div>
+              <>
+                <div className="broadcast-pitch">
+                  <strong>PATCH PITCH — <code>!patch &lt;idea&gt;</code> · <time>{pitchPresentation.timer}</time></strong>
+                </div>
+                <div className="broadcast-pitch-ticker">
+                  {pitchPresentation.ticker.length ? pitchPresentation.ticker.map((idea) => <span key={`${idea.userName}-${idea.text}`}><b>{idea.userName}</b> {idea.text}</span>) : <span>WAITING FOR CHAT IDEAS…</span>}
+                </div>
+              </>
             )}
 
             {round.phase === "vote" && (
@@ -105,6 +109,7 @@ export function BroadcastOverlay({ round, twitchUser, eventSubStatus, chat, patc
 
         <aside className="broadcast-sidecar" aria-label="Live patch information">
           <section className="broadcast-credits">
+            {round.phase === "pitch" && <strong className="pitch-idea-count">{pitchPresentation.ideaCount}</strong>}
             <p>PATCH CREDITS</p>
             {rail.credits.map(({ name, count }) => <div key={name}><b>{name.slice(0, 1).toUpperCase()}</b><span>{name}</span><strong>×{count}</strong></div>)}
             {!rail.credits.length && <small>Chat authors appear here</small>}

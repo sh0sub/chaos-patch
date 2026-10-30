@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { BroadcastState } from "@chaos-patch/schema";
-import { createApplyPresentation, createOverlayPresentation, createOverlayRail } from "./overlay";
+import { createApplyPresentation, createOverlayPresentation, createOverlayRail, createPitchPresentation } from "./overlay";
 
 const voteRound: BroadcastState = {
   round: 7,
@@ -47,6 +47,27 @@ describe("broadcast overlay presentation", () => {
       { leading: false, tied: true },
       { leading: false, tied: false }
     ]);
+  });
+
+  it("builds the pitch banner, ticker, and live idea count", () => {
+    const pitch = createPitchPresentation({
+      ...voteRound,
+      phase: "pitch",
+      remainingSeconds: 30,
+      proposals: [
+        { id: "p1", userId: "u1", userName: "mina", text: "giant emotes", createdAt: "2026-10-31T00:00:00.000Z" },
+        { id: "p2", userId: "u2", userName: "tom", text: "lava floor", createdAt: "2026-10-31T00:00:01.000Z" }
+      ]
+    });
+
+    expect(pitch).toEqual({
+      timer: "00:30",
+      ideaCount: "2 ideas",
+      ticker: [
+        { userName: "mina", text: "giant emotes" },
+        { userName: "tom", text: "lava floor" }
+      ]
+    });
   });
 
   it("builds the artifact side rail in credits, notes, chat order", () => {
