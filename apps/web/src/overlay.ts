@@ -13,9 +13,11 @@ const instructions: Record<BroadcastState["phase"], string> = {
 
 export function createOverlayPresentation(round: BroadcastState) {
   const highestVotes = Math.max(0, ...round.candidates.map((candidate) => candidate.votes));
+  const leaderCount = round.candidates.filter((candidate) => highestVotes > 0 && candidate.votes === highestVotes).length;
   return {
     phase: round.phase.toUpperCase(),
     timer: formatTimer(round.remainingSeconds),
+    urgent: round.phase === "vote" && round.remainingSeconds <= 5,
     instruction: instructions[round.phase],
     candidates: round.candidates.map((candidate, index) => ({
       number: index + 1,
@@ -23,7 +25,8 @@ export function createOverlayPresentation(round: BroadcastState) {
       description: candidate.description,
       proposer: candidate.proposer,
       votes: candidate.votes,
-      leading: candidate.votes > 0 && candidate.votes === highestVotes
+      leading: candidate.votes > 0 && candidate.votes === highestVotes && leaderCount === 1,
+      tied: candidate.votes > 0 && candidate.votes === highestVotes && leaderCount > 1
     }))
   };
 }

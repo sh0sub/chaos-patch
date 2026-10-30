@@ -21,4 +21,10 @@ describe("broadcast vote layout", () => {
     expect(pixelToken("vote-bar")).toBe(16);
     expect(pixelToken("vote-countdown")).toBe(64);
   });
+
+  it("uses Twitch vote bars, spring motion, and an urgent countdown pulse", () => {
+    expect(css).toContain("background:#9146ff");
+    expect(css).toContain("transition:width 250ms cubic-bezier");
+    expect(css).toContain("@keyframes vote-countdown-pulse");
+  });
 });

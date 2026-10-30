@@ -60,10 +60,11 @@ export function BroadcastOverlay({ round, twitchUser, eventSubStatus, chat, patc
 
             {round.phase === "vote" && (
               <div className="broadcast-vote phase-card">
-                <div className="broadcast-vote-title"><span>VOTE</span><time>{presentation.timer}</time><strong>{presentation.instruction}</strong></div>
+                <div className="broadcast-vote-title"><span>VOTE</span><time className={presentation.urgent ? "urgent" : undefined}>{presentation.timer}</time><strong>{presentation.instruction}</strong></div>
                 <div className="broadcast-vote-grid">
                   {presentation.candidates.map((candidate) => (
-                    <article className={candidate.leading ? "leading" : ""} key={candidate.number}>
+                    <article className={candidate.leading ? "leading" : candidate.tied ? "tied" : ""} key={candidate.number}>
+                      {candidate.leading && <em className="vote-leading">LEADING</em>}
                       <span>{candidate.number}</span>
                       <h2>{candidate.title}</h2>
                       <p>{candidate.description}</p>

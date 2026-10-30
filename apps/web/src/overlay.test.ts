@@ -31,6 +31,24 @@ describe("broadcast overlay presentation", () => {
     });
   });
 
+  it("distinguishes a sole leader from a last-five-second tie", () => {
+    const tied = createOverlayPresentation({
+      ...voteRound,
+      remainingSeconds: 5,
+      candidates: voteRound.candidates.map((candidate, index) => ({
+        ...candidate,
+        votes: index < 2 ? 12 : 4
+      }))
+    });
+
+    expect(tied.urgent).toBe(true);
+    expect(tied.candidates).toMatchObject([
+      { leading: false, tied: true },
+      { leading: false, tied: true },
+      { leading: false, tied: false }
+    ]);
+  });
+
   it("builds the artifact side rail in credits, notes, chat order", () => {
     const round: BroadcastState = {
       ...voteRound,
