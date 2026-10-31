@@ -9,6 +9,10 @@ export function overlaySocketUrl(protocol: string, host: string, pathname: strin
   return `${protocol}//${host}/ws?surface=${surface}${authorization}`;
 }
 
+export function maskOverlaySourceUrl(url: string): string {
+  return url.replace(/(#k=)([^&]+)/, (_match, prefix: string, key: string) => `${prefix}${key.slice(0, 4)}…`);
+}
+
 export function parseBlockedTerms(input: string): string[] {
   const unique = new Map<string, string>();
   for (const term of input.split(",")) {

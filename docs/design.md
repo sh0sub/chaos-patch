@@ -32,7 +32,7 @@ A calm broadcast control room cut by one electric patch-lime signal: dense enoug
 | canvas | `#0e0e10` | game and broadcast background |
 | panel | `#18181b` | operational surfaces |
 | panel raised | `#202024` | active workspace |
-| line | `#34343a` | necessary boundaries |
+| line | `#2a2a2e` | necessary boundaries |
 | text primary | `#efeff1` | headings and values |
 | text secondary | `#b8b8c2` | labels and context |
 | action primary | `#c8ff3d` | apply, start, current version |

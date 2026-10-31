@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { overlaySocketUrl, overlaySourceUrl, parseBlockedTerms } from "./sessionControls";
+import { maskOverlaySourceUrl, overlaySocketUrl, overlaySourceUrl, parseBlockedTerms } from "./sessionControls";
 
 describe("session controls", () => {
   it("builds the OBS source URL and normalizes up to five blocked terms", () => {
@@ -8,6 +8,7 @@ describe("session controls", () => {
       "ws://localhost:5173/ws?surface=overlay&token=one%20time%20key"
     );
     expect(overlaySocketUrl("ws:", "localhost:5173", "/", "")).toBe("ws://localhost:5173/ws?surface=dashboard");
+    expect(maskOverlaySourceUrl("https://example.com/overlay#k=abcdef123456")).toBe("https://example.com/overlay#k=abcd…");
     expect(parseBlockedTerms(" private data, gambling, private data, self-harm, adult, hate, extra ")).toEqual([
       "private data",
       "gambling",

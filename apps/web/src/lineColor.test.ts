@@ -6,8 +6,8 @@ const css = readFileSync(fileURLToPath(new URL("./styles.css", import.meta.url))
 
 describe("shared line color", () => {
   it("uses the global line token on dashboard and overlay", () => {
-    expect(css).toContain("--line:#34343a");
-    expect(css).not.toContain("#2a2a2e");
+    expect(css).toContain("--line:#2a2a2e");
+    expect(css).not.toContain("#34343a");
     expect(css).toContain(".broadcast-game-viewport { position:relative; min-height:0; overflow:hidden; border:1px solid var(--line)");
   });
 });

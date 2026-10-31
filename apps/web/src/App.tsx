@@ -3,6 +3,7 @@ import { defaultSessionSettings, type BroadcastState, type PatchV1, type Session
 import { BroadcastOverlay } from "./components/BroadcastOverlay";
 import { GameCanvas } from "./components/GameCanvas";
 import { HoldRollbackButton } from "./components/HoldRollbackButton";
+import { SetupDashboard } from "./components/SetupDashboard";
 import { chatLinePresentation, type ChatWireLine } from "./chatWire";
 import { buildEmoteCatalog, type TwitchEmoteAsset } from "./gameVisuals";
 import { markerStatus } from "./marker";
@@ -48,6 +49,7 @@ export function App() {
   const settingsKeyRef = useRef("");
   const isBroadcastOverlay = window.location.pathname === "/overlay";
   const isRecapPage = window.location.pathname === "/recap";
+  const isSetupPage = window.location.pathname === "/dashboard/setup" || window.location.pathname === "/";
   const statusPresentation = twitchStatusPresentation(snapshot.twitch.eventSub, snapshot.twitch.authenticated ? snapshot.twitch.user?.display_name ?? "Twitch" : null);
   const recapKey = snapshot.round.patchHistory.map(({ version, status }) => `${version}:${status}`).join("|");
   const emoteCatalog = useMemo(() => buildEmoteCatalog(emotes), [emotes]);
@@ -123,7 +125,7 @@ export function App() {
     setBlockedTermsText(snapshot.session.settings.blockedTerms.join(", "));
   }, [snapshot.session.settings]);
 
-  const action = async (path: string, body?: unknown) => {
+  const action = async (path: string, body?: unknown): Promise<boolean> => {
     setBusy(true);
     setError(null);
     try {
@@ -135,8 +137,10 @@ export function App() {
         const payload = await response.json().catch(() => ({})) as { error?: string };
         throw new Error(payload.error ?? `Request failed (${response.status})`);
       }
+      return true;
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Request failed");
+      return false;
     }
     finally { setBusy(false); }
   };
@@ -172,6 +176,16 @@ export function App() {
     }
   };
   const saveSettings = () => action("/api/session/settings", { ...settingsDraft, blockedTerms: parseBlockedTerms(blockedTermsText) });
+  const startSession = async () => {
+    const saved = await saveSettings();
+    if (!saved) return;
+    const started = await action("/api/session/start");
+    if (started) window.location.assign("/dashboard/live");
+  };
+  const runScriptedDemo = async () => {
+    const started = await action("/api/mock/script");
+    if (started) window.location.assign("/dashboard/live");
+  };
   const shareRecap = async () => {
     const url = `${window.location.origin}/recap`;
     const message = recapShareMessage(recap, url);
@@ -233,6 +247,24 @@ export function App() {
         <footer className="recap-share"><div><p className="eyebrow">SHARE THE BUILD</p><h2>Chat made this.</h2></div><button type="button" onClick={() => void shareRecap()}>{recapShareStatus}</button></footer>
       </main>
     );
+  }
+
+  if (isSetupPage) {
+    return <SetupDashboard
+      twitch={snapshot.twitch}
+      overlayClients={snapshot.session.overlayClients}
+      obsUrl={obsUrl}
+      obsCopied={obsCopied}
+      settings={settingsDraft}
+      blockedTerms={blockedTermsText}
+      busy={busy}
+      error={error}
+      onCopyObs={() => void copyObsUrl()}
+      onSettingsChange={setSettingsDraft}
+      onBlockedTermsChange={setBlockedTermsText}
+      onStart={() => void startSession()}
+      onRunDemo={() => void runScriptedDemo()}
+    />;
   }
 
   return (
