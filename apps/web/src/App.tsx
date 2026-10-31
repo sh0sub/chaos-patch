@@ -49,7 +49,7 @@ export function App() {
   const [recapShareStatus, setRecapShareStatus] = useState("Share recap");
   const settingsKeyRef = useRef("");
   const isBroadcastOverlay = window.location.pathname === "/overlay";
-  const isRecapPage = window.location.pathname === "/recap";
+  const isRecapPage = window.location.pathname.startsWith("/recap");
   const isSetupPage = window.location.pathname === "/dashboard/setup" || window.location.pathname === "/";
   const isLiveControlPage = window.location.pathname === "/dashboard/live";
   const statusPresentation = twitchStatusPresentation(snapshot.twitch.eventSub, snapshot.twitch.authenticated ? snapshot.twitch.user?.display_name ?? "Twitch" : null);
@@ -189,7 +189,7 @@ export function App() {
     if (started) window.location.assign("/dashboard/live");
   };
   const shareRecap = async () => {
-    const url = `${window.location.origin}/recap`;
+    const url = window.location.href;
     const message = recapShareMessage(recap, url);
     let copied = false;
     try {
@@ -227,26 +227,26 @@ export function App() {
   if (isRecapPage) {
     return (
       <main className="recap-page">
-        <nav className="recap-nav"><a className="brand" href="/"><span className="brand-mark">CP</span><span>CHAOS PATCH</span></a><a href="/">← Back to control room</a></nav>
+        <nav className="recap-nav"><a href="/dashboard/live" aria-label="Back to Live Control">←</a><strong>Patch Notes</strong><span className="recap-status">종료</span></nav>
         <header className="recap-hero">
           <div className="recap-avatar">{recap.broadcaster?.avatarUrl ? <img src={recap.broadcaster.avatarUrl} alt="" /> : <span>CP</span>}</div>
-          <div><p className="eyebrow">SESSION RECAP · {recap.sessionDate || "TODAY"}</p><h1>{recap.broadcaster?.displayName ?? "Chaos Patch"}<br /><em>shipped the chaos.</em></h1></div>
+          <div className="recap-identity"><p>Patch Notes v{recap.build}</p><h1>{recap.broadcaster?.displayName ?? "Chaos Patch"}'s game</h1><span>{recap.sessionDate || "TODAY"}</span></div>
           <dl><div><dt>PATCHES</dt><dd>{recap.patchCount}</dd></div><div><dt>CONTRIBUTORS</dt><dd>{recap.contributorCount}</dd></div></dl>
         </header>
 
-        <section className="recap-section"><div className="feed-head"><div><p className="eyebrow">LEADERBOARD</p><h2>Top 3 by votes</h2></div></div>
-          <div className="recap-top-three">{recap.topPatches.length ? recap.topPatches.map((entry, index) => <article key={entry.version}><span>0{index + 1}</span><h3>{entry.title}</h3><p>by @{entry.proposer}</p><strong>{entry.votes} VOTES</strong></article>) : <p>No voted patches yet.</p>}</div>
+        <section className="recap-section"><header className="recap-section-title"><p>TOP PATCHES</p><span>Top 3 by votes</span></header>
+          <div className="recap-top-three">{recap.topPatches.length ? recap.topPatches.map((entry, index) => <article key={entry.version}><code>v{entry.version}</code><div><h3>{entry.title}</h3><p>@{entry.proposer}</p></div><strong>{entry.votes}</strong><span>0{index + 1}</span></article>) : <p>No voted patches yet.</p>}</div>
         </section>
 
-        <section className="recap-section"><div className="feed-head"><div><p className="eyebrow">BUILD LOG</p><h2>Full patch timeline</h2></div></div>
-          <ol className="recap-timeline">{recap.timeline.length ? recap.timeline.map((entry) => <li key={entry.version}><time>{entry.appliedAt ? new Date(entry.appliedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "--:--"}</time><code>BUILD v{entry.version}</code><strong>{entry.title}</strong><span>@{entry.proposer} · {entry.votes} votes · {entry.status.replace("_", " ")}</span></li>) : <li>No patches shipped yet.</li>}</ol>
+        <section className="recap-section"><header className="recap-section-title"><p>전체 패치노트</p><span>Full patch timeline</span></header>
+          <ol className="recap-timeline">{recap.timeline.length ? recap.timeline.map((entry) => <li key={entry.version}><code>v{entry.version}</code><div><strong>{entry.title}</strong><span>@{entry.proposer} · {entry.votes} votes</span></div><b className={entry.status}>{entry.status === "applied" ? "APPLIED" : "ROLLED BACK"}</b></li>) : <li>No patches shipped yet.</li>}</ol>
         </section>
 
-        <section className="recap-section"><div className="feed-head"><div><p className="eyebrow">COMMUNITY</p><h2>Patch Credits</h2></div></div>
+        <section className="recap-section"><header className="recap-section-title"><p>PATCH CREDITS</p><span>Patch Credits</span></header>
           <div className="credit-cloud">{recap.credits.length ? recap.credits.map((credit) => <span style={{ fontSize: `${Math.min(18 + credit.patches * 6, 42)}px` }} key={credit.proposer}>@{credit.proposer}<small>{credit.patches}</small></span>) : <p>Contributors will appear after the first patch.</p>}</div>
         </section>
 
-        <footer className="recap-share"><div><p className="eyebrow">SHARE THE BUILD</p><h2>Chat made this.</h2></div><button type="button" onClick={() => void shareRecap()}>{recapShareStatus}</button></footer>
+        <footer className="recap-share"><div><p>SHARE THE BUILD</p><strong>Chat made this.</strong></div><button type="button" onClick={() => void shareRecap()}>↗ {recapShareStatus}</button><small>채팅 공지 + 링크 복사</small></footer>
       </main>
     );
   }
