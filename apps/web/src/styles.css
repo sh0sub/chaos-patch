@@ -1,6 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&family=JetBrains+Mono:wght@500;700&family=Manrope:wght@400;600;700;800&family=Noto+Sans+KR:wght@400;600;700;800&family=Space+Grotesk:wght@700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&family=JetBrains+Mono:wght@500;700&family=Noto+Sans+KR:wght@400;600;700;800&family=Space+Grotesk:wght@700&display=swap');
 
-:root { color-scheme: dark; font-family: Manrope, "Noto Sans KR", system-ui, sans-serif; color: #efeff1; background: #0e0e10; font-synthesis: none; --lime:#c8ff3d; --pink:#ff3da6; --purple:#9146ff; --cyan:#3de0ff; --line:#2a2a2e; }
+:root { color-scheme: dark; font-family: Inter, "Noto Sans KR", system-ui, sans-serif; color: #efeff1; background: #0e0e10; font-synthesis: none; --lime:#c8ff3d; --pink:#ff3da6; --purple:#9146ff; --cyan:#3de0ff; --line:#2a2a2e; }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body { margin: 0; min-width: 320px; background: radial-gradient(circle at 75% 0%, rgba(145,70,255,.11), transparent 32rem), #0e0e10; }

@@ -7,6 +7,7 @@ const css = readFileSync(fileURLToPath(new URL("./styles.css", import.meta.url))
 describe("font loading", () => {
   it("loads the Korean font named by the root stack", () => {
     expect(css).toContain("family=Noto+Sans+KR:wght@400;600;700;800");
-    expect(css).toContain('font-family: Manrope, "Noto Sans KR"');
+    expect(css).toContain('font-family: Inter, "Noto Sans KR"');
+    expect(css).toContain('font:700 20px "Space Grotesk"');
   });
 });

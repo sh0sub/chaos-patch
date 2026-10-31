@@ -14,10 +14,10 @@ A calm broadcast control room cut by one electric patch-lime signal: dense enoug
 
 ## Content plan
 
-- Setup: Twitch connection, OBS readiness, and one clear Start action.
-- Arena: the playable Emote Dodge canvas is the dominant visual.
-- Control: phase, timer, proposal stream, and emergency actions.
-- Patch history: compact version trail with explicit applied and rolled-back states.
+- M1 Setup: 280 px setup rail, 72 px status header, Twitch/OBS/session pre-flight, overlay preview, and one lime Start action.
+- M2 Live Control: 56 px runtime bar over the Artifact's 360 / 600 / 480 chat, round, and patch columns.
+- M3–M6 Overlay: the playable Emote Dodge canvas is dominant, with patch credits, notes, and chat in a fixed side rail.
+- M7 Recap: a 390 px recap share document with hero metrics, Top 3, full timeline, credits, and one share action.
 
 ## Interaction thesis
 
@@ -42,20 +42,22 @@ A calm broadcast control room cut by one electric patch-lime signal: dense enoug
 | Twitch | `#9146ff` | Twitch-originated identity only |
 | warning | `#ffc46b` | degraded or waiting state |
 
-Spacing follows 4/8/12/16/20/24/32/40/48. Controls have a 48 px target, 9 px button radius, 8 px input radius, visible 3 px focus with 3 px offset, and no permanent decorative shadow.
+Spacing follows 4/8/12/16/20/24/32/40/48. Controls have a 48 px target, square operational edges by default, visible 3 px focus with 3 px offset, and no permanent decorative shadow.
 
 ## Typography
 
-- UI: Manrope, Noto Sans KR, system fallbacks.
+- Headings: Space Grotesk 700, Noto Sans KR fallback.
+- UI: Inter 500/600/700, Noto Sans KR, system fallbacks.
 - Logs and versions: JetBrains Mono, SFMono-Regular, monospace.
 - Minimum operational text: 12 px; body 14 px; main title 30 px.
 - Numeric timers and versions use tabular numerals.
 
 ## Responsive contract
 
-- `>900`: wide arena with a 326 px operational control rail; the 56 px runtime bar remains visible.
-- `721–900`: single-column workspace with controls below the arena and a single-column audience feed.
-- `<=720`: single column, horizontally scrollable runtime metrics, 48 px controls, and no page-level horizontal overflow; expanded patch diffs also stack.
+- `>1200`: M1 keeps its 280 px setup rail; M2 uses the full 360 / 600 / 480 three-column second-monitor layout.
+- `901–1200`: M2 keeps chat and round side by side and moves patch history, compile log, and safety below them.
+- `721–900`: Setup steps become a horizontal rail; M2 stacks into one column; overlay remains a fixed 16:9 broadcast surface.
+- `<=720`: Setup and M2 use one column with 48 px controls and no page-level horizontal overflow; the 390 px recap fills the available mobile width.
 - Required checks: 360, 390, 720, 1024, and 1440 px plus 200% browser zoom.
 
 ## States

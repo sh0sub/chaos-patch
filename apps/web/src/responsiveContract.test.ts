@@ -6,10 +6,11 @@ const css = readFileSync(fileURLToPath(new URL("./styles.css", import.meta.url))
 const design = readFileSync(fileURLToPath(new URL("../../../docs/design.md", import.meta.url)), "utf8");
 
 describe("responsive contract", () => {
-  it("matches the implemented 900 px workspace and 720 px mobile breakpoints", () => {
-    expect(design).toContain("`>900`");
-    expect(design).toContain("`721–900`");
-    expect(design).not.toContain("216 px navigation");
+  it("matches the artifact setup, live-control, and mobile recap shells", () => {
+    expect(design).toContain("280 px setup rail");
+    expect(design).toContain("360 / 600 / 480");
+    expect(design).toContain("390 px recap");
+    expect(css).toContain("@media (max-width: 1200px)");
     expect(css).toContain("@media (max-width: 900px)");
     expect(css).toContain("@media (max-width: 720px)");
   });
