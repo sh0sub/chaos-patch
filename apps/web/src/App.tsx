@@ -3,6 +3,7 @@ import { defaultSessionSettings, type BroadcastState, type PatchV1, type Session
 import { BroadcastOverlay } from "./components/BroadcastOverlay";
 import { GameCanvas } from "./components/GameCanvas";
 import { HoldRollbackButton } from "./components/HoldRollbackButton";
+import { LiveControl } from "./components/LiveControl";
 import { SetupDashboard } from "./components/SetupDashboard";
 import { chatLinePresentation, type ChatWireLine } from "./chatWire";
 import { buildEmoteCatalog, type TwitchEmoteAsset } from "./gameVisuals";
@@ -50,6 +51,7 @@ export function App() {
   const isBroadcastOverlay = window.location.pathname === "/overlay";
   const isRecapPage = window.location.pathname === "/recap";
   const isSetupPage = window.location.pathname === "/dashboard/setup" || window.location.pathname === "/";
+  const isLiveControlPage = window.location.pathname === "/dashboard/live";
   const statusPresentation = twitchStatusPresentation(snapshot.twitch.eventSub, snapshot.twitch.authenticated ? snapshot.twitch.user?.display_name ?? "Twitch" : null);
   const recapKey = snapshot.round.patchHistory.map(({ version, status }) => `${version}:${status}`).join("|");
   const emoteCatalog = useMemo(() => buildEmoteCatalog(emotes), [emotes]);
@@ -264,6 +266,26 @@ export function App() {
       onBlockedTermsChange={setBlockedTermsText}
       onStart={() => void startSession()}
       onRunDemo={() => void runScriptedDemo()}
+    />;
+  }
+
+  if (isLiveControlPage) {
+    return <LiveControl
+      round={snapshot.round}
+      twitch={snapshot.twitch}
+      session={snapshot.session}
+      telemetry={snapshot.telemetry}
+      chat={chat}
+      busy={busy}
+      error={error}
+      onAdvance={runNext}
+      onPause={() => void action("/api/session/pause", { paused: !snapshot.session.paused })}
+      onRollback={() => snapshot.round.activePatch && rollbackPatch(snapshot.round.activePatch.version, "early_crash")}
+      onIntensityChange={(intensity) => {
+        const settings = { ...snapshot.session.settings, intensity };
+        setSettingsDraft(settings);
+        void action("/api/session/settings", settings);
+      }}
     />;
   }
 
