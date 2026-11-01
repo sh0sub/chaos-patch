@@ -505,6 +505,51 @@ describe("Chaos Patch HTTP server", () => {
     await server.close();
   });
 
+  it("compiles a fresh build when a new session starts after APPLY", async () => {
+    let compileCalls = 0;
+    const server = createChaosPatchServer({
+      twitch: new FakeTwitch(),
+      compileCandidate: async (candidate, nextVersion) => {
+        compileCalls += 1;
+        return {
+          ...patch,
+          version: nextVersion,
+          title: candidate.title,
+          proposer: candidate.proposer
+        };
+      },
+      sessionSecret: "test-session-secret-that-is-at-least-32-characters",
+      webOrigin: "http://localhost:5173",
+      tickMilliseconds: 10_000
+    });
+
+    await server.inject({ method: "POST", url: "/api/mock/script" });
+    const first = await server.inject({ method: "POST", url: "/api/session/compile" });
+    await server.inject({ method: "POST", url: "/api/session/start" });
+    await server.inject({ method: "POST", url: "/api/session/advance" });
+    await server.inject({
+      method: "POST",
+      url: "/api/mock/chat",
+      payload: { userName: "fresh_viewer", message: "!patch fresh round idea" }
+    });
+    await server.inject({ method: "POST", url: "/api/session/advance" });
+    await server.inject({
+      method: "POST",
+      url: "/api/mock/chat",
+      payload: { userName: "fresh_voter", message: "1" }
+    });
+    const second = await server.inject({ method: "POST", url: "/api/session/compile" });
+
+    expect(first.statusCode).toBe(200);
+    expect(second.statusCode).toBe(200);
+    expect(compileCalls).toBe(2);
+    expect(second.json()).toMatchObject({
+      patch: { version: 3, title: "fresh round idea", proposer: "fresh_viewer" },
+      round: { round: 2, phase: "apply", version: 3 }
+    });
+    await server.close();
+  });
+
   it("exchanges a valid OAuth callback and starts EventSub", async () => {
     const twitch = new FakeTwitch();
     twitch.authorizationUrl = (state: string) => `https://example.test/oauth?state=${encodeURIComponent(state)}`;

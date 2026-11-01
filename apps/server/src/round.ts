@@ -50,11 +50,15 @@ export class RoundStore {
   }
 
   start(): BroadcastState {
+    const startsNewRound = this.state.phase !== "idle" && this.state.phase !== "play";
+    this.votesByUser.clear();
     this.state = {
       ...this.state,
-      round: Math.max(1, this.state.round || 1),
+      round: startsNewRound ? this.state.round + 1 : Math.max(1, this.state.round || 1),
       phase: "play",
-      remainingSeconds: this.phaseSeconds("play")
+      remainingSeconds: this.phaseSeconds("play"),
+      proposals: [],
+      candidates: []
     };
     return this.snapshot();
   }
