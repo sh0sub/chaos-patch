@@ -24,6 +24,18 @@ Repository visibility before submission: `TODO — verify public, or share a pri
 
 The final video must be under three minutes, show the project functioning on Twitch, show how it was built with Codex, and avoid unlicensed music or third-party copyrighted material.
 
+YouTube title: `Chaos Patch — Twitch Chat Ships the Next Game Update | Codex x TwitchCon`
+
+YouTube description:
+
+> Chaos Patch turns Twitch chat into the live game-design team. Viewers propose updates with `!patch`, vote with `1`, `2`, or `3`, and watch the winning idea become a schema-bounded game patch on the same broadcast surface. This demo shows the real Twitch EventSub loop, OpenAI compilation, visible game changes, safety rollback, recap, and the single Codex thread used to build and verify the project.
+>
+> Built for the Codex x TwitchCon Hackathon.
+>
+> Source: https://github.com/sh0sub/chaos-patch
+
+Set visibility to **Public**. The official rules require the YouTube video to be publicly visible; Unlisted is not sufficient.
+
 ## Codex Session ID
 
 `01a1788b-2f7f-7f11-b496-5fe706a6e0fa`
