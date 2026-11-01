@@ -91,7 +91,7 @@ Another useful failure was a no-participant round that could have triggered an u
 - The applied patch visibly changes the game without deploying new frontend code.
 - Unsafe patches can roll back automatically while preserving a clear recap trail.
 - The same interface works as a desktop control room, mobile dashboard, and OBS overlay.
-- The project gate currently passes strict type checking, 53 automated tests, and a production build.
+- The project gate currently passes strict type checking, 111 automated tests, and a production build.
 - Raw evidence captures are kept outside Git, while the repository contains reproducible tests and clear setup instructions.
 
 ## What we learned
@@ -100,7 +100,7 @@ Interactive streaming systems need two kinds of safety: gameplay safety and inte
 
 ## What's next for Chaos Patch
 
-- Run the main session with 3–5 viewers and edit the final three-minute submission video.
+- Publish the verified 2:10 submission cut and add captions on the hosting platform.
 - Add more Emote Dodge patch parameters while keeping the same bounded schema.
 - Add a separate branded chat bot account after the broadcaster-owned MVP.
 - Revisit Twitch Clip/Marker only after the channel becomes VOD-eligible.
@@ -127,12 +127,12 @@ The project is free to run for judging. API usage is limited to the entrant's co
 ## Final submission checklist
 
 - [ ] Repository URL is accessible to judges and contains all source, assets, and instructions.
-- [ ] `pnpm check` passes from the final commit.
-- [ ] Text description is in English and accurately distinguishes Codex from the runtime OpenAI API.
+- [x] `pnpm check` passes from the final commit (111 tests, strict type checking, production build).
+- [x] Text description is in English and accurately distinguishes Codex from the runtime OpenAI API.
 - [ ] Codex Session ID is copied from the final redacted `/status`.
-- [ ] Public YouTube video is under three minutes.
-- [ ] Video shows the project functioning on Twitch.
-- [ ] Video shows how Codex was used to build it.
-- [ ] Video contains no secrets, personal tabs, unlicensed music, or unsupported success claims.
+- [ ] Public YouTube video is under three minutes (verified local 2:10 cut is ready to upload).
+- [x] Video shows the project functioning on Twitch.
+- [x] Video shows how Codex was used to build it.
+- [x] Video contains no secrets, personal tabs, unlicensed music, or unsupported success claims.
 - [ ] Final Devpost submission is completed before November 2, 2026 at 2:00 PM Pacific Time.
 - [ ] Submission confirmation is captured after the final submit action.
