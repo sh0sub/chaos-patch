@@ -130,7 +130,7 @@ The project is free to run for judging. API usage is limited to the entrant's co
 - [x] `pnpm check` passes from the final commit (111 tests, strict type checking, production build).
 - [x] Text description is in English and accurately distinguishes Codex from the runtime OpenAI API.
 - [x] Codex Session ID is copied from the final redacted `/status`.
-- [ ] Public YouTube video is under three minutes (verified local 2:10.90 V3 cut is ready to upload).
+- [ ] Public YouTube video is under three minutes (verified local 2:11.40 V3 cut is ready to upload).
 - [x] Video shows the project functioning on Twitch.
 - [x] Video shows how Codex was used to build it.
 - [x] Video contains no secrets, personal tabs, unlicensed music, or unsupported success claims.
