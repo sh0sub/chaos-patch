@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Chaos Patch — Twitch chat proposes, votes, and ships bounded live game patches." />
+  <title>Chaos Patch — Chat ships the next update</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&family=JetBrains+Mono:wght@500;700&family=Noto+Sans+KR:wght@500;600;700&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet" />
+  <style>
+    :root{color-scheme:dark;--canvas:#0e0e10;--panel:#18181b;--raised:#202024;--line:#2a2a2e;--ink:#efeff1;--muted:#96969f;--lime:#c8ff3d;--pink:#ff3da6;--cyan:#3de0ff;--purple:#9146ff;--header:68px;font-family:Inter,"Noto Sans KR",system-ui,sans-serif;background:var(--canvas);color:var(--ink)}
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;min-width:320px;overflow-x:hidden;background:var(--canvas)}
+    a,button{font:inherit}
+    a{color:inherit}
+    a:focus-visible,button:focus-visible{outline:3px solid var(--cyan);outline-offset:4px}
+    .mono{font-family:"JetBrains Mono",monospace}
+    .site-header{position:fixed;z-index:50;inset:0 0 auto;height:var(--header);display:grid;grid-template-columns:auto 1fr auto;align-items:center;padding:0 clamp(18px,4vw,64px);border-bottom:1px solid rgba(255,255,255,.11);background:rgba(14,14,16,.88);backdrop-filter:blur(16px)}
+    .brand{display:flex;align-items:center;gap:12px;text-decoration:none;font:700 15px "Space Grotesk",sans-serif;letter-spacing:.07em}
+    .brand-mark{display:grid;place-items:center;width:34px;height:34px;color:#10120b;background:var(--lime);transform:skew(-7deg);font:700 12px "JetBrains Mono",monospace}
+    .site-nav{display:flex;justify-content:center;gap:32px}
+    .site-nav a{color:#92929a;text-decoration:none;font-size:13px;transition:color 180ms ease}
+    .site-nav a:hover{color:var(--ink)}
+    .header-cta{min-height:42px;display:flex;align-items:center;padding:0 16px;color:#10120b;background:var(--lime);text-decoration:none;font-weight:800}
+    .hero{position:relative;min-height:100svh;display:grid;align-items:center;overflow:hidden;padding:calc(var(--header) + 76px) clamp(18px,6vw,92px) 68px}
+    .hero::before{position:absolute;inset:0;content:"";pointer-events:none;background:linear-gradient(rgba(255,255,255,.023) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.023) 1px,transparent 1px);background-size:48px 48px;mask-image:linear-gradient(to right,#000,transparent 72%)}
+    .hero::after{position:absolute;inset:0;content:"";pointer-events:none;background:linear-gradient(90deg,var(--canvas) 0%,rgba(14,14,16,.9) 34%,rgba(14,14,16,.06) 72%)}
+    .hero-copy{position:relative;z-index:3;width:min(700px,58vw)}
+    .hero-kicker{display:flex;align-items:center;gap:10px;margin:0 0 24px;color:var(--lime);font:700 12px "JetBrains Mono",monospace;letter-spacing:.14em}
+    .hero-kicker i{width:8px;height:8px;border-radius:50%;background:var(--lime);box-shadow:0 0 18px rgba(200,255,61,.75);animation:live-pulse 1.4s ease-in-out infinite}
+    .hero h1{margin:0;font:700 clamp(62px,8.7vw,142px)/.78 "Space Grotesk",sans-serif;letter-spacing:-.075em}
+    .hero h1 span{display:block;color:var(--lime)}
+    .hero-lede{max-width:570px;margin:34px 0 0;color:#b4b4bd;font-size:clamp(16px,1.4vw,20px);line-height:1.65}
+    .hero-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:34px}
+    .primary,.secondary{min-height:52px;display:flex;align-items:center;justify-content:center;padding:0 20px;text-decoration:none;font-weight:800}
+    .primary{color:#10120b;background:var(--lime)}
+    .secondary{border:1px solid #4a4a51;color:var(--ink);background:rgba(14,14,16,.65)}
+    .hero-proof{display:flex;flex-wrap:wrap;gap:8px 24px;margin-top:32px;color:#75757e;font:700 12px "JetBrains Mono",monospace}
+    .hero-proof span::before{content:"✓";margin-right:8px;color:var(--lime)}
+    .hero-visual{position:absolute;z-index:1;top:calc(var(--header) + 50px);right:-3vw;width:min(760px,56vw);height:calc(100svh - var(--header) - 92px);min-height:560px;perspective:1300px;opacity:0;animation:visual-in 900ms 180ms cubic-bezier(.2,.8,.2,1) forwards}
+    .broadcast-frame{position:absolute;inset:4% 0 3% 4%;overflow:hidden;border:1px solid #3b3b42;background:#101012;box-shadow:-36px 40px 90px rgba(0,0,0,.44);transform:rotateY(-6deg) rotateX(2deg);transform-origin:right center}
+    .broadcast-top{height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid var(--line);font:700 12px "JetBrains Mono",monospace}
+    .broadcast-top b{color:var(--lime)}
+    .broadcast-body{height:calc(100% - 58px);display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:12px;padding:12px}
+    .arena{position:relative;overflow:hidden;border:1px solid #393943;background:#16102b}
+    .arena::before{position:absolute;inset:0;content:"";background:linear-gradient(180deg,#211246 0 55%,#10111a 55%);opacity:.85}
+    .moon{position:absolute;top:15%;right:13%;width:84px;height:84px;border-radius:50%;background:#f2b8e8;box-shadow:0 0 42px rgba(255,61,166,.25)}
+    .city{position:absolute;inset:auto 0 23%;height:32%;background:repeating-linear-gradient(90deg,#151523 0 32px,#222237 33px 57px,#12121d 58px 88px);clip-path:polygon(0 52%,5% 52%,5% 17%,12% 17%,12% 62%,18% 62%,18% 35%,25% 35%,25% 0,34% 0,34% 55%,42% 55%,42% 24%,49% 24%,49% 71%,58% 71%,58% 42%,66% 42%,66% 12%,75% 12%,75% 60%,82% 60%,82% 31%,90% 31%,90% 54%,100% 54%,100% 100%,0 100%)}
+    .platform{position:absolute;left:9%;right:9%;bottom:15%;height:18px;border-top:3px solid var(--lime);background:#252534;box-shadow:0 9px 0 #111117}
+    .player{position:absolute;left:26%;bottom:calc(15% + 18px);width:46px;height:56px;background:var(--cyan);clip-path:polygon(30% 0,70% 0,82% 22%,100% 35%,82% 48%,82% 100%,18% 100%,18% 48%,0 35%,18% 22%);animation:player-hop 1.8s ease-in-out infinite}
+    .obstacle{position:absolute;width:58px;height:58px;display:grid;place-items:center;border:3px solid var(--pink);border-radius:50%;color:#fff;background:#321027;font:700 12px "JetBrains Mono",monospace;box-shadow:0 0 24px rgba(255,61,166,.38);animation:obstacle-run 3.4s linear infinite}
+    .obstacle.one{right:18%;bottom:calc(15% + 20px)}
+    .obstacle.two{right:-10%;bottom:calc(15% + 20px);animation-delay:1.7s}
+    .arena-hud{position:absolute;top:18px;left:18px;display:grid;gap:5px;font:700 12px "JetBrains Mono",monospace}.arena-hud b{color:var(--lime);font-size:22px}
+    .patch-toast{position:absolute;left:50%;top:21%;width:min(360px,72%);padding:16px 18px;border:1px solid var(--lime);color:#10120b;background:var(--lime);box-shadow:8px 8px 0 rgba(61,224,255,.38);transform:translateX(-50%);animation:patch-toast 4.8s ease-in-out infinite}
+    .patch-toast small{display:block;margin-bottom:4px;font:700 12px "JetBrains Mono",monospace}.patch-toast strong{font:700 20px "Space Grotesk",sans-serif}
+    .side-rail{display:grid;grid-template-rows:auto 1fr 1fr;border:1px solid var(--line);background:#151517}
+    .side-rail section{padding:16px;border-bottom:1px solid var(--line)}.side-rail section:last-child{border:0}.side-rail h3{margin:0 0 14px;color:#85858e;font:700 12px "JetBrains Mono",monospace;letter-spacing:.1em}.credit,.note,.chat{display:grid;gap:3px;margin:10px 0;font-size:12px}.credit{grid-template-columns:28px 1fr auto;align-items:center}.credit i{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;color:#10120b;background:var(--cyan);font-style:normal;font-weight:800}.credit b{color:var(--lime)}.note code{color:var(--lime)}.note span,.chat span{color:#8b8b94}.chat strong{color:var(--purple)}
+    .scroll-cue{position:absolute;z-index:4;right:clamp(18px,4vw,64px);bottom:28px;display:flex;align-items:center;gap:10px;color:#777780;font:700 12px "JetBrains Mono",monospace;writing-mode:vertical-rl}.scroll-cue::after{content:"";width:1px;height:48px;background:linear-gradient(var(--lime),transparent)}
+    .section{padding:clamp(88px,11vw,160px) clamp(18px,6vw,92px);border-top:1px solid var(--line)}
+    .section-label{margin:0 0 18px;color:var(--lime);font:700 12px "JetBrains Mono",monospace;letter-spacing:.16em}
+    .section h2{max-width:960px;margin:0;font:700 clamp(42px,6.4vw,92px)/.92 "Space Grotesk",sans-serif;letter-spacing:-.055em}
+    .section-intro{max-width:650px;margin:24px 0 0;color:var(--muted);font-size:17px;line-height:1.7}
+    .loop-section{display:grid;grid-template-columns:minmax(300px,.8fr) minmax(560px,1.2fr);gap:8vw;align-items:start}
+    .loop-copy{position:sticky;top:calc(var(--header) + 60px)}
+    .loop-copy h2{font-size:clamp(48px,6vw,86px)}
+    .loop-rail{border-top:1px solid var(--line)}
+    .loop-step{display:grid;grid-template-columns:72px minmax(0,1fr) auto;align-items:center;gap:22px;min-height:126px;border-bottom:1px solid var(--line);opacity:.42;transform:translateX(20px);transition:opacity 420ms ease,transform 420ms ease}
+    .loop-step.visible{opacity:1;transform:none}.loop-step > span{color:#5e5e67;font:700 12px "JetBrains Mono",monospace}.loop-step h3{margin:0 0 8px;font:700 clamp(24px,3vw,40px) "Space Grotesk",sans-serif}.loop-step p{margin:0;color:#888891;line-height:1.6}.loop-step code{color:var(--lime);font:700 13px "JetBrains Mono",monospace}
+    .product-section{padding-bottom:0}.surface-stage{position:relative;height:min(720px,72vw);min-height:520px;margin-top:64px;overflow:hidden;border-top:1px solid var(--line);background:#111113}
+    .surface{position:absolute;overflow:hidden;border:1px solid #3a3a40;background:#151517;box-shadow:0 34px 70px rgba(0,0,0,.4);transition:transform 320ms ease,border-color 320ms ease}.surface:hover{z-index:5;border-color:var(--lime);transform:translateY(-12px)}
+    .surface.setup{left:3%;top:17%;width:44%;height:59%;transform:rotate(-4deg)}.surface.live{left:29%;top:5%;width:56%;height:70%;z-index:2}.surface.recap{right:3%;top:19%;width:22%;height:68%;transform:rotate(4deg)}
+    .surface-bar{height:38px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;border-bottom:1px solid var(--line);color:#85858e;font:700 12px "JetBrains Mono",monospace}.surface-bar b{color:var(--lime)}
+    .surface-body{height:calc(100% - 38px);display:grid}.setup .surface-body{grid-template-columns:92px 1fr}.surface-nav{padding:14px 10px;border-right:1px solid var(--line);color:#65656d;font:700 12px/2.4 "JetBrains Mono",monospace}.surface-nav b{display:block;color:var(--ink)}.surface-main{padding:22px}.surface-main p{margin:0 0 9px;color:var(--lime);font:700 12px "JetBrains Mono",monospace}.surface-main h3{margin:0 0 24px;font:700 clamp(20px,2.8vw,38px)/.95 "Space Grotesk",sans-serif}.fake-row{height:46px;margin-top:8px;border:1px solid var(--line);background:#1b1b1e}.fake-row.action{display:flex;align-items:center;padding:0 12px;color:#10120b;background:var(--lime);font-weight:800}.live .surface-body{grid-template-columns:27% 44% 29%}.live .surface-body > div{padding:13px;border-right:1px solid var(--line)}.live .surface-body > div:last-child{border:0}.mini-title{color:#85858e;font:700 12px "JetBrains Mono",monospace}.mini-line{height:32px;margin-top:8px;border-bottom:1px solid #252529}.mini-clock{margin:28px 0;color:var(--lime);font:700 clamp(26px,4vw,58px) "JetBrains Mono",monospace}.mini-action{height:40px;margin-top:auto;background:var(--lime)}.recap .surface-body{display:block;padding:16px}.recap-hero-mini{display:grid;grid-template-columns:38px 1fr;gap:10px;align-items:center;padding-bottom:14px;border-bottom:1px solid var(--line)}.recap-avatar-mini{width:38px;height:38px;border-radius:50%;background:var(--lime)}.recap-hero-mini strong{font-size:12px}.recap-block{height:52px;margin-top:9px;border:1px solid var(--line);background:#18181b}.recap-block:first-of-type{border-color:var(--lime)}
+    .proof-section{display:grid;grid-template-columns:minmax(320px,.85fr) minmax(540px,1.15fr);gap:9vw;align-items:center;background:#111113}
+    .proof-section h2{font-size:clamp(42px,5.6vw,80px)}
+    .guard-list{border-top:1px solid var(--line)}.guard{display:grid;grid-template-columns:42px 1fr auto;align-items:center;gap:14px;min-height:76px;border-bottom:1px solid var(--line)}.guard > span{color:var(--lime);font:700 20px "JetBrains Mono",monospace}.guard strong{display:block;margin-bottom:4px}.guard small{color:#777780;font-size:12px}.guard code{color:#8c8c95;font-size:12px}
+    .terminal{margin-top:30px;border:1px solid var(--line);background:#0c0c0e}.terminal-head{height:42px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;border-bottom:1px solid var(--line);color:#777780;font:700 12px "JetBrains Mono",monospace}.terminal-head b{color:var(--lime)}.terminal-body{min-height:230px;padding:18px;color:#a1a1aa;font:500 13px/1.8 "JetBrains Mono",monospace}.terminal-body p{margin:0}.terminal-body i{color:var(--lime);font-style:normal}.terminal-body .minus{color:#ff8bc9}.terminal-body .plus{color:var(--cyan)}.terminal-body .ok{margin-top:12px;color:var(--lime)}
+    .final-cta{min-height:72svh;display:grid;place-content:center;text-align:center;padding:96px 18px;border-top:1px solid var(--line);background:var(--lime);color:#10120b}.final-cta p{margin:0 0 20px;font:700 12px "JetBrains Mono",monospace;letter-spacing:.15em}.final-cta h2{max-width:1000px;margin:0;font:700 clamp(54px,9vw,132px)/.8 "Space Grotesk",sans-serif;letter-spacing:-.07em}.final-actions{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin-top:40px}.final-actions a{min-height:54px;display:flex;align-items:center;padding:0 20px;border:2px solid #10120b;color:#10120b;text-decoration:none;font-weight:800}.final-actions a:first-child{color:var(--lime);background:#10120b}
+    .site-footer{min-height:76px;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:0 clamp(18px,6vw,92px);color:#707078;font:700 12px "JetBrains Mono",monospace}.site-footer a{text-decoration:none}.site-footer a:hover{color:var(--lime)}
+    .reveal{opacity:0;transform:translateY(24px);transition:opacity 600ms ease,transform 600ms cubic-bezier(.2,.8,.2,1)}.reveal.visible{opacity:1;transform:none}
+    @keyframes live-pulse{50%{opacity:.45;transform:scale(.75)}}
+    @keyframes visual-in{from{opacity:0;transform:translateX(70px)}to{opacity:1;transform:none}}
+    @keyframes player-hop{0%,100%{transform:translateY(0)}45%{transform:translateY(-52px)}}
+    @keyframes obstacle-run{from{transform:translateX(150px) rotate(0)}to{transform:translateX(-580px) rotate(-540deg)}}
+    @keyframes patch-toast{0%,15%{opacity:0;transform:translate(-50%,-24px)}22%,72%{opacity:1;transform:translate(-50%,0)}82%,100%{opacity:0;transform:translate(-50%,12px)}}
+    @media(max-width:1000px){.site-nav{display:none}.hero{align-items:start}.hero-copy{width:min(720px,92%)}.hero-visual{top:42%;right:-22%;width:92vw;height:56vh;min-height:440px;opacity:.4}.hero::after{background:linear-gradient(180deg,var(--canvas) 0 43%,rgba(14,14,16,.22) 75%,var(--canvas))}.loop-section,.proof-section{grid-template-columns:1fr}.loop-copy{position:static}.surface-stage{height:680px}.surface.setup{left:2%;width:54%}.surface.live{left:18%;width:72%}.surface.recap{width:28%}.proof-section{gap:60px}}
+    @media(max-width:700px){:root{--header:60px}.site-header{grid-template-columns:1fr auto;padding:0 16px}.header-cta{min-height:38px;padding:0 12px;font-size:12px}.hero{min-height:920px;padding:calc(var(--header) + 54px) 16px 44px}.hero-copy{width:100%}.hero h1{font-size:clamp(58px,20vw,88px)}.hero-lede{font-size:16px}.hero-visual{top:470px;right:-150px;width:760px;height:420px;min-height:0}.broadcast-body{grid-template-columns:1fr 190px}.scroll-cue{display:none}.section{padding:88px 16px}.loop-step{grid-template-columns:42px 1fr;gap:12px;min-height:144px}.loop-step code{grid-column:2}.surface-stage{height:590px;margin-top:42px;overflow:visible}.surface.setup{left:0;top:7%;width:82%;height:45%}.surface.live{left:5%;top:31%;width:95%;height:50%}.surface.recap{right:0;top:58%;width:39%;height:39%}.proof-section{padding-top:100px}.guard{grid-template-columns:34px 1fr}.guard code{display:none}.terminal-body{font-size:12px;overflow:hidden}.final-cta{min-height:620px}.site-footer{align-items:flex-start;flex-direction:column;justify-content:center;padding-top:22px;padding-bottom:22px}}
+    @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation:none!important;transition:none!important}.hero-visual,.reveal,.loop-step{opacity:1;transform:none}}
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="#top"><span class="brand-mark">CP</span><span>CHAOS PATCH</span></a>
+    <nav class="site-nav" aria-label="서비스 소개"><a href="#loop">Game loop</a><a href="#product">Product</a><a href="#safety">Safety</a></nav>
+    <a class="header-cta" href="/dashboard/setup">Open app →</a>
+  </header>
+
+  <main>
+    <section class="hero" id="top">
+      <div class="hero-copy">
+        <p class="hero-kicker"><i></i>TWITCH CHAT · LIVE GAME PATCHING</p>
+        <h1>Chat ships the<span>next update.</span></h1>
+        <p class="hero-lede">시청자가 Twitch 채팅으로 패치를 제안하고 투표하면, AI가 안전한 게임 파라미터로 컴파일해 방송 중인 Emote Dodge에 새 빌드로 적용합니다.</p>
+        <div class="hero-actions"><a class="primary" href="/dashboard/setup">서비스 체험하기 →</a><a class="secondary" href="/dashboard/live">Live Control 보기</a></div>
+        <div class="hero-proof"><span>EventSub WebSocket</span><span>Structured PatchV1</span><span>Automatic rollback</span></div>
+      </div>
+
+      <div class="hero-visual" aria-label="Chaos Patch 방송 오버레이 미리보기">
+        <div class="broadcast-frame">
+          <div class="broadcast-top"><span>CHAOS PATCH <b>v1.6</b></span><span>ROUND 7 · PLAY &nbsp; 00:41</span></div>
+          <div class="broadcast-body">
+            <div class="arena">
+              <div class="moon"></div><div class="city"></div><div class="platform"></div><div class="player"></div>
+              <div class="obstacle one">EMOTE</div><div class="obstacle two">CHAT</div>
+              <div class="arena-hud"><span>SURVIVED</span><b>00:23</b><span>BEST 00:51</span></div>
+              <div class="patch-toast"><small>PATCH APPLIED · BUILD v1.6</small><strong>Giant Emotes</strong></div>
+            </div>
+            <aside class="side-rail">
+              <section><h3>PATCH CREDITS</h3><div class="credit"><i>K</i><span>kim_pog</span><b>×3</b></div><div class="credit"><i>M</i><span>mina_dev</span><b>×2</b></div></section>
+              <section><h3>LIVE PATCH NOTES</h3><div class="note"><code>v1.6</code><span>Giant Emotes</span></div><div class="note"><code>v1.5</code><span>Wind Gusts</span></div><div class="note"><code>v1.4</code><span>rolled back</span></div></section>
+              <section><h3>CHAT</h3><div class="chat"><strong>yuna_k</strong><span>왜 이렇게 커 ㅋㅋㅋ</span></div><div class="chat"><strong>kim_pog</strong><span>내 패치다</span></div></section>
+            </aside>
+          </div>
+        </div>
+      </div>
+      <span class="scroll-cue">SCROLL</span>
+    </section>
+
+    <section class="section loop-section" id="loop">
+      <div class="loop-copy reveal"><p class="section-label">THE CORE LOOP</p><h2>관객의 한 문장이<br />새 빌드가 된다.</h2><p class="section-intro">폴이나 Channel Points 없이 채팅만으로 완결됩니다. 스트리머는 게임을 계속하고, 관객은 다음 패치의 공동 개발자가 됩니다.</p></div>
+      <div class="loop-rail">
+        <article class="loop-step"><span>01</span><div><h3>Play</h3><p>스트리머가 Emote Dodge의 현재 빌드를 플레이합니다.</p></div><code>BUILD v1.5</code></article>
+        <article class="loop-step"><span>02</span><div><h3>Pitch</h3><p>시청자가 <code>!patch</code> 명령으로 게임 변경 아이디어를 보냅니다.</p></div><code>30 SEC</code></article>
+        <article class="loop-step"><span>03</span><div><h3>Vote</h3><p>중복을 압축한 세 후보 중 채팅 숫자 1·2·3으로 선택합니다.</p></div><code>3 CHOICES</code></article>
+        <article class="loop-step"><span>04</span><div><h3>Compile</h3><p>OpenAI가 우승 아이디어를 제한된 구조의 PatchV1으로 변환합니다.</p></div><code>≤ 6 SEC</code></article>
+        <article class="loop-step"><span>05</span><div><h3>Apply</h3><p>새 BUILD를 즉시 적용하고, 이상 징후가 있으면 이전 버전으로 복구합니다.</p></div><code>SAFE SHIP</code></article>
+      </div>
+    </section>
+
+    <section class="section product-section" id="product">
+      <p class="section-label reveal">ONE SHOW · THREE SURFACES</p>
+      <h2 class="reveal">준비부터 방송, 공유까지<br />한 흐름으로 운영한다.</h2>
+      <p class="section-intro reveal">Setup은 3분 안에 방송을 준비하고, Live Control은 두 번째 모니터에서 라운드를 운영하며, Recap은 오늘의 공동 개발자를 기록합니다.</p>
+      <div class="surface-stage reveal" aria-label="Setup, Live Control, Recap 화면 구성">
+        <article class="surface setup"><div class="surface-bar"><span>M1 · SETUP</span><b>3 / 3</b></div><div class="surface-body"><div class="surface-nav">01 TWITCH<br />02 OBS<br /><b>03 SESSION</b></div><div class="surface-main"><p>PRE-FLIGHT CHECK</p><h3>Ready the room.<br />Ship the chaos.</h3><div class="fake-row"></div><div class="fake-row"></div><div class="fake-row action">START SESSION →</div></div></div></article>
+        <article class="surface live"><div class="surface-bar"><span>M2 · LIVE CONTROL</span><b>PITCH 00:12</b></div><div class="surface-body"><div><span class="mini-title">LIVE CHAT</span><div class="mini-line"></div><div class="mini-line"></div><div class="mini-line"></div><div class="mini-line"></div></div><div><span class="mini-title">PROPOSALS &amp; VOTE</span><div class="mini-clock">00:12</div><div class="mini-line"></div><div class="mini-line"></div><div class="mini-action"></div></div><div><span class="mini-title">PATCH QUEUE</span><div class="mini-line"></div><div class="mini-line"></div><div class="mini-line"></div><div class="mini-line"></div></div></div></article>
+        <article class="surface recap"><div class="surface-bar"><span>M7 · RECAP</span><b>v1.17</b></div><div class="surface-body"><div class="recap-hero-mini"><div class="recap-avatar-mini"></div><strong>Patch Notes<br />17 patches</strong></div><div class="recap-block"></div><div class="recap-block"></div><div class="recap-block"></div></div></article>
+      </div>
+    </section>
+
+    <section class="section proof-section" id="safety">
+      <div class="reveal"><p class="section-label">BOUNDED CHAOS</p><h2>재미는 크게.<br />실패 범위는 작게.</h2><p class="section-intro">AI는 코드를 자유롭게 배포하지 않습니다. 서버가 허용한 노브만 바꾸고, 실제 플레이 상태를 감시해 불안정한 패치를 자동으로 되돌립니다.</p><div class="terminal"><div class="terminal-head"><span>compile.log</span><b>v1.6 LIVE</b></div><div class="terminal-body"><p><i>$</i> chaos compile --strict PatchV1</p><p class="minus">- obstacle.scale &nbsp; 1.0</p><p class="plus">+ obstacle.scale &nbsp; 2.6</p><p class="minus">- obstacle.sprite &nbsp; "circle"</p><p class="plus">+ obstacle.sprite &nbsp; "emote"</p><p class="ok">✓ schema ok &nbsp; ✓ safety ok &nbsp; ✓ applied</p></div></div></div>
+      <div class="guard-list reveal"><div class="guard"><span>01</span><div><strong>Strict schema</strong><small>PatchV1 구조화 출력과 서버 측 정규화</small></div><code>STRICT</code></div><div class="guard"><span>02</span><div><strong>Allowed knobs only</strong><small>중력·속도·장애물 등 제한된 파라미터</small></div><code>BOUNDED</code></div><div class="guard"><span>03</span><div><strong>Chat safety</strong><small>금칙어 필터, 중복 압축, 3후보 제한</small></div><code>FILTERED</code></div><div class="guard"><span>04</span><div><strong>Automatic rollback</strong><small>충돌 또는 FPS&lt;20이 3초 지속될 때 복구</small></div><code>WATCHING</code></div></div>
+    </section>
+
+    <section class="final-cta"><p>PLAY → PITCH → VOTE → COMPILE → APPLY</p><h2>Let chat ship it.</h2><div class="final-actions"><a href="/dashboard/setup">Setup에서 시작 →</a><a href="/dashboard/live">Live Control 열기</a></div></section>
+  </main>
+
+  <footer class="site-footer"><span>CHAOS PATCH · CODEX × TWITCHCON</span><a href="https://github.com/sh0sub/chaos-patch" rel="noreferrer">GitHub ↗</a></footer>
+
+  <script>
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) entry.target.classList.add("visible");
+      });
+    }, { threshold: 0.18 });
+    document.querySelectorAll(".reveal, .loop-step").forEach((element) => observer.observe(element));
+  </script>
+</body>
+</html>

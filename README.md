@@ -23,6 +23,8 @@ pnpm dev
 
 Open <http://localhost:5173> and click **Run scripted demo**. It loads 10 seeded proposals, compresses them into three visible choices with 12 votes, and pauses at VOTE. Click **Compile winner** to apply the winning patch. The local fallback compiler works without Twitch or OpenAI credentials.
 
+For a product overview before entering the control room, open <http://localhost:5173/intro.html>. The page explains the audience patch loop, operating surfaces, and safety model without exposing credentials or private overlay URLs.
+
 ### Live Twitch path
 
 A confidential Twitch application with callback `http://localhost:3000/auth/callback` is required. An OpenAI API key enables AI compression and compilation; without it, safe local fallbacks remain available.
@@ -51,6 +53,8 @@ D6 resilience verified on 2026-10-28: concurrent Twitch operations share one tok
 D7 preparation verified on 2026-10-28: the full project gate passes with 24 tests; a real Twitch proposal and vote returned through EventSub and shipped BUILD v3 through `gpt-4o-mini`. A final controlled Marker retry remained externally blocked by Twitch `VOD_NOT_READY`, so further Marker retries are out of scope for the main recording. See `docs/demo-runbook.md` for the 25-minute session and three-minute edit plan.
 
 Artifact-parity pass verified on 2026-10-29: the dedicated OBS overlay, real Kappa rendering, profile-image player path, `SURVIVED / BEST` game HUD, phase-aware game freeze, AI proposal compression, low-FPS rollback guard, session settings, Pause/Resume, and mobile control-room layout are implemented. The full gate passes with 53 tests, strict type checking, and a production build.
+
+Artifact UI and service-tour pass verified on 2026-11-01: Setup, Live Control, mobile Recap, and the public `/intro.html` product narrative share the same patch-notes × hacker-terminal visual system. Current verification counts are reported by `pnpm check` rather than duplicated here.
 
 ## License
 
