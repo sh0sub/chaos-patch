@@ -10,4 +10,10 @@ describe("broadcast rollback motion", () => {
     expect(css).toContain(".rollback-active .broadcast-game-viewport");
     expect(css).toContain("@keyframes rollback-frame-flash");
   });
+
+  it("restarts a visible rollback card after the apply card has faded", () => {
+    expect(css).toMatch(/\.broadcast-apply\.rolled_back\s*\{[^}]*rollback-card-in/s);
+    expect(css).toContain("@keyframes rollback-card-in");
+    expect(css).toContain("@keyframes rollback-card-hold");
+  });
 });

@@ -285,7 +285,7 @@ code { font-family:"JetBrains Mono", monospace; }
 .compile-cursor { background:var(--cyan); width:12px; height:24px; animation:compile-cursor-blink 500ms steps(1,end) infinite; }
 .broadcast-compile code { width:max-content; max-width:100%; overflow:hidden; color:#d5f8ff; font-size:var(--compile-font); line-height:1.1; white-space:nowrap; animation:compile-type 420ms steps(24,end) both; }
 .broadcast-apply { width:min(700px, 78%); padding:34px 40px; border:2px solid var(--lime); color:#10120b; background:var(--lime); box-shadow:12px 12px 0 rgba(61,224,255,.4), -12px -12px 0 rgba(255,61,166,.25); animation:apply-rgb-split var(--apply-glitch) steps(2,end) both, apply-slide-in var(--apply-slide) cubic-bezier(.34,1.56,.64,1) var(--apply-glitch) both, apply-hold-fade calc(var(--apply-hold) + 500ms) linear calc(var(--apply-glitch) + var(--apply-slide)) both; }
-.broadcast-apply.rolled_back { border-color:var(--pink); color:#efeff1; background:#29121f; box-shadow:12px 12px 0 rgba(255,61,166,.25); }
+.broadcast-apply.rolled_back { border-color:var(--pink); color:#efeff1; background:#29121f; box-shadow:12px 12px 0 rgba(255,61,166,.25); animation:rollback-card-in 180ms ease-out both, rollback-card-hold 4000ms linear 180ms forwards; }
 .broadcast-apply span { font:700 12px "JetBrains Mono"; letter-spacing:.16em; }
 .broadcast-apply strong { display:block; margin:10px 0; font-size:clamp(32px, 4vw, 58px); letter-spacing:-.04em; }
 .broadcast-apply p { margin:0 0 12px; font-size:19px; }
@@ -508,6 +508,8 @@ code { font-family:"JetBrains Mono", monospace; }
 @keyframes apply-rgb-split { from { filter:drop-shadow(-12px 0 #ff3da6) drop-shadow(12px 0 #3de0ff); } to { filter:none; } }
 @keyframes apply-slide-in { from { transform:translate(-50%, calc(-50% + 72px)) scale(.94); } to { transform:translate(-50%, -50%) scale(1); } }
 @keyframes apply-hold-fade { 0%, 87.5% { opacity:1; } 100% { opacity:0; } }
+@keyframes rollback-card-in { from { opacity:0; transform:translate(-50%, -50%) scale(.96); } to { opacity:1; transform:translate(-50%, -50%) scale(1); } }
+@keyframes rollback-card-hold { 0%, 87.5% { opacity:1; } 100% { opacity:0; } }
 @keyframes rollback-frame-flash { 0%, 55% { border-color:var(--pink); box-shadow:inset 0 0 0 5px var(--pink), 0 0 36px rgba(255,61,166,.7); } 100% { border-color:var(--line); box-shadow:inset 0 0 0 1px rgba(255,255,255,.02); } }
 @keyframes rollback-hold-fill { from { width:0; } to { width:100%; } }
 @keyframes vote-countdown-pulse { from { transform:scale(1); } to { transform:scale(1.15); } }
