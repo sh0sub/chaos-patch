@@ -50,11 +50,11 @@ D1 vertical slice verified on 2026-10-27: Twitch OAuth, EventSub chat receive, H
 
 D6 resilience verified on 2026-10-28: concurrent Twitch operations share one token refresh, and the dashboard reconnects its state WebSocket after an actual local server restart without a browser reload.
 
-D7 preparation verified on 2026-10-28: the full project gate passes with 24 tests; a real Twitch proposal and vote returned through EventSub and shipped BUILD v3 through `gpt-4o-mini`. A final controlled Marker retry remained externally blocked by Twitch `VOD_NOT_READY`, so further Marker retries are out of scope for the main recording. See `docs/demo-runbook.md` for the 25-minute session and three-minute edit plan.
+D7 preparation verified on 2026-10-28: a real Twitch proposal and vote returned through EventSub and shipped BUILD v3 through `gpt-4o-mini`. A final controlled Marker retry remained externally blocked by Twitch `VOD_NOT_READY`, so further Marker retries are out of scope for the main recording.
 
-Artifact-parity pass verified on 2026-10-29: the dedicated OBS overlay, real Kappa rendering, profile-image player path, `SURVIVED / BEST` game HUD, phase-aware game freeze, AI proposal compression, low-FPS rollback guard, session settings, Pause/Resume, and mobile control-room layout are implemented. The full gate passes with 53 tests, strict type checking, and a production build.
+Artifact-parity pass verified on 2026-10-29: the dedicated OBS overlay, real Kappa rendering, profile-image player path, `SURVIVED / BEST` game HUD, phase-aware game freeze, AI proposal compression, low-FPS rollback guard, session settings, Pause/Resume, and mobile control-room layout are implemented.
 
-Artifact UI and service-tour pass verified on 2026-11-01: Setup, Live Control, mobile Recap, and the public `/intro.html` product narrative share the same patch-notes × hacker-terminal visual system. Current verification counts are reported by `pnpm check` rather than duplicated here.
+Final submission verification completed on 2026-11-02: Setup, Live Control, mobile Recap, and the `/intro.html` product narrative share the same patch-notes × hacker-terminal visual system. A 59-second real-channel proof covers EventSub proposals, chat voting, OpenAI compilation, BUILD application, and rollback. The current project gate passes strict type checking, 111 automated tests, and the production build.
 
 ## License
 

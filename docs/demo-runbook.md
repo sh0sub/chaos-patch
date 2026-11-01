@@ -2,12 +2,12 @@
 
 ## Goal
 
-Record one clean, camera-optional 25-minute Twitch session that proves a real audience can propose, vote on, compile, apply, and roll back a Chaos Patch. Preserve the raw OBS recording locally, then edit a public submission video to three minutes or less.
+Record one clean, camera-optional Twitch flow that proves a real audience can propose, vote on, compile, apply, and roll back a Chaos Patch. A solo broadcaster account is sufficient for the technical proof; preserve the raw recording locally, then edit a public submission video to three minutes or less.
 
 ## People and privacy
 
 - Broadcaster: the current `whalebus__97` account.
-- Viewers: target 3–5 consenting participants; one participant is enough for the technical fallback rehearsal.
+- Viewers: optional. If other people join, use only consenting participants; the broadcaster account alone can prove the full chat loop.
 - Camera: not required. Keep it absent unless the broadcaster explicitly wants it.
 - Microphone: enable only for intentional narration. Confirm the meter before going live.
 - Hide notifications, email, API dashboards, OAuth query parameters, secrets, and unrelated tabs.
@@ -26,7 +26,9 @@ Complete these checks before pressing **Start Streaming**:
 
 If the automated gate fails, do not start the broadcast. If Twitch chat fails, reconnect once; use Mock Chat only after showing the degraded state and explaining that it is the artifact-approved fallback.
 
-## 25-minute session
+## Optional extended session
+
+The 25-minute format below is a rehearsal option, not a submission requirement. The verified final path uses a concise real-channel recording and does not depend on recruiting viewers.
 
 | Time | Action | Proof to preserve |
 |---|---|---|
@@ -43,8 +45,8 @@ Do not spend live-demo time retrying Twitch Clip or Marker. Three controlled bro
 
 ## Capture names
 
-- Raw main session: `videos/2026-10-XX-d7-main-session.mov`
-- Final edit: `videos/chaos-patch-devpost-final.mp4`
+- Raw main session: `videos/2026-11-02-v3-real-twitch-full-flow.mp4`
+- Final edit: `videos/chaos-patch-devpost-final-v3.mp4`
 - Latest focused proof: `screenshot/current-screen.png`
 
 Raw captures remain ignored. Inspect a frame near the beginning, the patch application, rollback, and ending before treating the recording as valid.

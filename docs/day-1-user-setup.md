@@ -90,7 +90,7 @@ Official quickstart: <https://developers.openai.com/api/docs/quickstart>
 ## Required before the main recording
 
 - Prepare a YouTube channel that can publish the final video publicly.
-- Recruit 3–5 consenting test viewers for one rehearsal and the main recording.
+- Optionally recruit consenting viewers for a rehearsal; the broadcaster account alone is enough for the required technical proof.
 - Check that the microphone, optional reaction camera, and desktop audio can be recorded clearly.
 - Prepare a clean browser profile or recording layout that hides email, tokens, unrelated tabs, notifications, and personal information.
 

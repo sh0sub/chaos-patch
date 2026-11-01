@@ -26,7 +26,7 @@ The final video must be under three minutes, show the project functioning on Twi
 
 ## Codex Session ID
 
-`TODO — paste the final redacted /status Session ID here`
+`01a1788b-2f7f-7f11-b496-5fe706a6e0fa`
 
 Use the single Codex thread in which the project was implemented, tested, documented, and prepared for submission.
 
@@ -129,8 +129,8 @@ The project is free to run for judging. API usage is limited to the entrant's co
 - [ ] Repository URL is accessible to judges and contains all source, assets, and instructions.
 - [x] `pnpm check` passes from the final commit (111 tests, strict type checking, production build).
 - [x] Text description is in English and accurately distinguishes Codex from the runtime OpenAI API.
-- [ ] Codex Session ID is copied from the final redacted `/status`.
-- [ ] Public YouTube video is under three minutes (verified local 2:10 cut is ready to upload).
+- [x] Codex Session ID is copied from the final redacted `/status`.
+- [ ] Public YouTube video is under three minutes (verified local 2:10.90 V3 cut is ready to upload).
 - [x] Video shows the project functioning on Twitch.
 - [x] Video shows how Codex was used to build it.
 - [x] Video contains no secrets, personal tabs, unlicensed music, or unsupported success claims.
