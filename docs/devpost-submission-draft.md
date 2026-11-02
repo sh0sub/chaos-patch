@@ -16,11 +16,13 @@ Twitch chat writes the patch notes, and AI ships them live.
 
 https://github.com/sh0sub/chaos-patch
 
-Repository visibility before submission: `TODO — verify public, or share a private GitHub repository with testing@devpost.com`
+Repository visibility before submission: **Public** (verified 2026-11-02).
 
 ## Demonstration video
 
-`TODO — public YouTube URL`
+https://youtu.be/Og-2QXDCgjc
+
+Published publicly on the **SH Labs** channel on 2026-11-02. Final V4 runtime: **2:11.40**.
 
 The final video must be under three minutes, show the project functioning on Twitch, show how it was built with Codex, and avoid unlicensed music or third-party copyrighted material.
 
@@ -112,7 +114,7 @@ Interactive streaming systems need two kinds of safety: gameplay safety and inte
 
 ## What's next for Chaos Patch
 
-- Publish the verified 2:10 submission cut and add captions on the hosting platform.
+- Add captions to the published submission video.
 - Add more Emote Dodge patch parameters while keeping the same bounded schema.
 - Add a separate branded chat bot account after the broadcaster-owned MVP.
 - Revisit Twitch Clip/Marker only after the channel becomes VOD-eligible.
@@ -138,11 +140,11 @@ The project is free to run for judging. API usage is limited to the entrant's co
 
 ## Final submission checklist
 
-- [ ] Repository URL is accessible to judges and contains all source, assets, and instructions.
+- [x] Repository URL is public and accessible to judges with source, assets, and instructions.
 - [x] `pnpm check` passes from the final commit (111 tests, strict type checking, production build).
 - [x] Text description is in English and accurately distinguishes Codex from the runtime OpenAI API.
 - [x] Codex Session ID is copied from the final redacted `/status`.
-- [ ] Public YouTube video is under three minutes (verified local 2:11.40 V3 cut is ready to upload).
+- [x] Public YouTube video is under three minutes (V4, 2:11.40): https://youtu.be/Og-2QXDCgjc
 - [x] Video shows the project functioning on Twitch.
 - [x] Video shows how Codex was used to build it.
 - [x] Video contains no secrets, personal tabs, unlicensed music, or unsupported success claims.
