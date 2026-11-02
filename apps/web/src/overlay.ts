@@ -1,4 +1,4 @@
-import type { BroadcastState } from "@chaos-patch/schema";
+import type { BroadcastState, PatchV1 } from "@chaos-patch/schema";
 
 type ChatLine = { userName: string; text: string };
 
@@ -49,6 +49,31 @@ export function createCompilePresentation(round: BroadcastState) {
   ];
 }
 
+export function createVoteRailPresentation(round: BroadcastState) {
+  return {
+    ideaCount: `${round.proposals.length} ${round.proposals.length === 1 ? "idea" : "ideas"}`,
+    proposals: round.proposals.slice(0, 5).map(({ userName, text }) => ({ userName, text })),
+    liveVotes: round.candidates.map((candidate, index) => ({
+      number: index + 1,
+      title: candidate.title,
+      votes: candidate.votes
+    }))
+  };
+}
+
+export function createActivePatchChips(patch: PatchV1 | null) {
+  if (!patch) return [];
+  const { params } = patch;
+  const chips: string[] = [];
+  if ((params.obstacleScale ?? 1) > 1.15 || params.obstacleSprite?.startsWith("emote:")) chips.push("Giant Emotes");
+  if (Math.abs(params.wind ?? 0) > 0.05) chips.push(`Wind ${(params.wind ?? 0) > 0 ? "→" : "←"}`);
+  if (params.controlsMirrored) chips.push("Mirror");
+  if (params.floorMode === "lava") chips.push("Lava Floor");
+  if ((params.gravity ?? 1) < 0.8) chips.push("Low Gravity");
+  if ((params.obstacleHoming ?? 0) > 0.05) chips.push("Homing");
+  return chips.slice(0, 3);
+}
+
 export function createOverlayRail(round: BroadcastState, chat: ChatLine[]) {
   const credits = Array.from(round.patchHistory.reduce((counts, patch) => {
     counts.set(patch.proposer, (counts.get(patch.proposer) ?? 0) + 1);
@@ -57,10 +82,7 @@ export function createOverlayRail(round: BroadcastState, chat: ChatLine[]) {
 
   return {
     sectionOrder: ["credits", "patches", "chat"] as const,
-    activeTitles: round.patchHistory
-      .filter((entry) => entry.status === "applied")
-      .slice(0, 4)
-      .map((entry) => entry.title),
+    activeTitles: createActivePatchChips(round.activePatch),
     credits,
     notes: round.patchHistory.slice(0, 6).map(({ version, title, status }) => ({ version, title, status })),
     chat: chat.slice(0, 5)
@@ -79,7 +101,11 @@ export function createApplyPresentation(round: BroadcastState) {
 }
 
 export function createRollbackLabel(round: BroadcastState) {
-  return `ROLLBACK → v${round.activePatch?.version ?? 1}`;
+  return `ROLLBACK → ${round.activePatch ? formatOverlayVersion(round.activePatch.version) : "v1.0"}`;
+}
+
+export function formatOverlayVersion(version: number) {
+  return `v1.${Math.max(0, Math.floor(version))}`;
 }
 
 function formatTimer(totalSeconds: number): string {

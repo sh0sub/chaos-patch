@@ -207,22 +207,24 @@ code { font-family:"JetBrains Mono", monospace; }
 .recap-share button { min-height:48px; padding:0 14px; border:0; border-radius:0; color:#10120b; background:var(--lime); cursor:pointer; font-weight:800; }
 .recap-share > small { grid-column:1 / -1; color:#777780; font-size:12px; }
 
-.broadcast-overlay { --overlay-body:28px; --overlay-caption:20px; --overlay-mono:22px; --overlay-version:36px; --vote-grid-width:1160px; --vote-card-width:360px; --vote-card-height:420px; --vote-gap:40px; --vote-number:72px; --vote-title:32px; --vote-description:24px; --vote-bar:16px; --vote-countdown:64px; --pitch-banner-width:900px; --pitch-banner-height:96px; --compile-width:760px; --compile-height:240px; --compile-font:26px; --apply-glitch:150ms; --apply-slide:400ms; --apply-hold:3500ms; --rollback-flash:1000ms; width:100vw; height:100vh; min-width:960px; min-height:540px; overflow:hidden; display:grid; grid-template-rows:88px minmax(0, 1fr); color:#efeff1; background:repeating-linear-gradient(0deg, rgba(255,255,255,.018) 0, rgba(255,255,255,.018) 1px, transparent 1px, transparent 4px), #0e0e10; }
-.broadcast-status { z-index:10; width:min(1760px, calc(100% - 64px)); margin:auto; display:grid; grid-template-columns:1fr auto 160px 220px; align-items:center; gap:28px; border-bottom:1px solid var(--line); background:#0e0e10; }
-.broadcast-brand { display:flex; align-items:center; gap:14px; font-size:var(--overlay-body); font-weight:800; letter-spacing:.08em; }
-.broadcast-brand > span { display:grid; place-items:center; width:48px; height:48px; color:#10120b; background:var(--lime); transform:skew(-7deg); font:700 var(--overlay-caption) "JetBrains Mono"; }
-.broadcast-brand b { color:#8b8b94; font-family:"JetBrains Mono"; font-size:var(--overlay-version); font-weight:500; }
+.broadcast-overlay { --overlay-body:28px; --overlay-caption:20px; --overlay-mono:22px; --overlay-version:36px; --overlay-stage-width:1600px; --overlay-game-width:1200px; --overlay-rail-width:360px; --overlay-stage-gap:40px; --overlay-status-height:56px; --overlay-game-height:840px; --overlay-ticker-height:48px; --vote-grid-width:1160px; --vote-card-width:360px; --vote-card-height:420px; --vote-gap:40px; --vote-number:72px; --vote-title:32px; --vote-description:24px; --vote-bar:16px; --vote-countdown:64px; --pitch-banner-width:900px; --pitch-banner-height:96px; --compile-width:760px; --compile-height:240px; --compile-font:26px; --apply-glitch:150ms; --apply-slide:400ms; --apply-hold:3500ms; --rollback-flash:1000ms; width:100vw; height:100vh; min-width:960px; min-height:540px; overflow:hidden; display:grid; grid-template-rows:120px minmax(0, 1fr); color:#efeff1; background:repeating-linear-gradient(0deg, rgba(255,255,255,.018) 0, rgba(255,255,255,.018) 1px, transparent 1px, transparent 4px), #0e0e10; }
+.broadcast-status { z-index:10; width:min(var(--overlay-game-width), calc(100% - 64px)); height:var(--overlay-status-height); margin:48px 0 16px max(32px, calc((100vw - var(--overlay-stage-width)) / 2)); display:grid; grid-template-columns:1fr auto 160px; align-items:center; gap:28px; border-bottom:1px solid var(--line); background:#0e0e10; }
+.broadcast-brand { display:flex; align-items:center; gap:12px; font-size:var(--overlay-body); font-weight:800; letter-spacing:.04em; }
+.broadcast-brand-mark { display:grid; place-items:center; width:38px; height:38px; color:#10120b; background:var(--lime); border-radius:5px; font:800 20px "JetBrains Mono"; }
+.broadcast-brand > span:nth-child(2) { white-space:nowrap; }
+.broadcast-brand em { color:var(--lime); font-style:normal; }
+.broadcast-version { padding:3px 10px; color:#10120b; background:var(--lime); border-radius:5px; font-family:"JetBrains Mono"; font-size:var(--overlay-version); font-weight:800; line-height:1; letter-spacing:-.08em; }
 .broadcast-round { font:700 var(--overlay-mono) "JetBrains Mono"; }
 .broadcast-round strong { color:var(--cyan); }
 .broadcast-status time { font:700 40px "JetBrains Mono"; font-variant-numeric:tabular-nums; letter-spacing:-.06em; }
-.broadcast-live { display:flex; align-items:center; gap:10px; color:#9a9aa2; font:700 var(--overlay-caption) "JetBrains Mono"; }
+.broadcast-live { display:none; align-items:center; gap:10px; color:#9a9aa2; font:700 var(--overlay-caption) "JetBrains Mono"; }
 .broadcast-live i { width:9px; height:9px; border-radius:50%; background:#777; }
 .broadcast-live.connected { color:var(--lime); }
 .broadcast-live.connected i { background:var(--lime); box-shadow:0 0 18px rgba(200,255,61,.6); }
-.broadcast-stage { position:relative; width:min(1760px, calc(100% - 64px)); min-height:0; margin:0 auto 28px; display:grid; grid-template-columns:minmax(0, 1fr) 390px; gap:20px; overflow:hidden; }
-.broadcast-game-column { min-width:0; min-height:0; display:grid; grid-template-rows:64px minmax(0, 1fr) 64px; }
-.broadcast-game-toolbar { min-width:0; display:flex; align-items:center; justify-content:space-between; gap:20px; }
-.broadcast-game-mode { color:#a0a0a8; font:700 var(--overlay-mono) "JetBrains Mono"; letter-spacing:.12em; }
+.broadcast-stage { position:relative; width:min(var(--overlay-stage-width), calc(100% - 64px)); min-height:0; margin:0 auto; display:grid; grid-template-columns:minmax(0, 1fr) minmax(300px, var(--overlay-rail-width)); gap:var(--overlay-stage-gap); overflow:hidden; }
+.broadcast-game-column { min-width:0; min-height:0; display:grid; grid-template-rows:var(--overlay-game-height) var(--overlay-ticker-height); gap:30px; }
+.broadcast-game-toolbar { position:absolute; z-index:4; top:16px; right:16px; left:16px; min-width:0; display:flex; align-items:center; justify-content:flex-end; gap:20px; pointer-events:none; }
+.broadcast-game-mode { display:none; color:#a0a0a8; font:700 var(--overlay-mono) "JetBrains Mono"; letter-spacing:.12em; }
 .broadcast-active { min-width:0; display:flex; justify-content:flex-end; gap:8px; overflow:hidden; }
 .broadcast-active span { flex:0 1 auto; overflow:hidden; padding:7px 10px; border:1px solid #8f315f; border-radius:999px; color:#efeff1; background:#19131b; text-overflow:ellipsis; white-space:nowrap; font:700 var(--overlay-caption) "JetBrains Mono"; }
 .broadcast-game-viewport { position:relative; min-height:0; overflow:hidden; border:1px solid var(--line); border-radius:10px; background:#130e25; box-shadow:inset 0 0 0 1px rgba(255,255,255,.02); }
@@ -230,27 +232,39 @@ code { font-family:"JetBrains Mono", monospace; }
 .broadcast-game-viewport::after { position:absolute; z-index:2; inset:0; pointer-events:none; content:""; background:repeating-linear-gradient(0deg, transparent 0, transparent 3px, rgba(255,255,255,.018) 4px); mix-blend-mode:screen; }
 .broadcast-game-viewport .game-frame, .broadcast-game-viewport .game-canvas { width:100%; height:100%; }
 .broadcast-game-viewport .game-canvas { min-height:0; }
+.broadcast-game-viewport .game-arena-title { display:none; }
 .broadcast-game-viewport .game-restart { z-index:7; bottom:12%; }
 .phase-pitch .broadcast-game-viewport .game-frame { opacity:.6; }
-.broadcast-next { display:flex; align-items:center; gap:18px; padding:0 18px; border:1px solid var(--line); border-top:0; border-radius:0 0 8px 8px; color:#dedee3; font:700 var(--overlay-body) "JetBrains Mono"; }
+.broadcast-next { height:var(--overlay-ticker-height); display:flex; align-items:center; gap:18px; padding:0 18px; border:1px solid var(--line); border-radius:8px; color:#dedee3; font:700 var(--overlay-body) "JetBrains Mono"; }
 .broadcast-next span { color:var(--cyan); font-size:var(--overlay-caption); letter-spacing:.12em; }
+.broadcast-next code { padding:2px 7px; color:var(--lime); background:#171a12; border:1px solid #394221; font-size:var(--overlay-caption); }
 .broadcast-next b { margin-left:auto; color:#92929b; font-size:var(--overlay-caption); font-weight:500; }
-.broadcast-sidecar { min-height:0; margin-top:64px; margin-bottom:64px; overflow:hidden; display:grid; grid-template-rows:auto minmax(0, 1fr) minmax(140px, .65fr); border:1px solid var(--line); border-radius:10px; background:#131315; }
+.broadcast-sidecar { width:var(--overlay-rail-width); height:var(--overlay-game-height); min-height:0; overflow:hidden; display:grid; grid-template-rows:180px minmax(0, 1fr) minmax(140px, .65fr); border:1px solid var(--line); border-radius:10px; background:#131315; }
 .broadcast-sidecar section { min-height:0; padding:18px 18px 16px; border-bottom:1px solid var(--line); overflow:hidden; }
 .broadcast-sidecar section:last-child { border-bottom:0; }
 .broadcast-sidecar p { margin:0 0 16px; color:#b8b8c2; font:700 var(--overlay-mono) "JetBrains Mono"; letter-spacing:.12em; }
-.broadcast-credits > div { display:grid; grid-template-columns:42px 1fr auto; align-items:center; gap:12px; margin-top:12px; color:#c9c9cf; font:600 var(--overlay-body) "Inter"; }
-.broadcast-credits > div > b { display:grid; place-items:center; width:42px; height:42px; border-radius:50%; color:#10120b; background:var(--cyan); font-size:var(--overlay-caption); }
-.broadcast-credits > div:nth-of-type(2n) > b { background:var(--pink); }
+.phase-vote .broadcast-sidecar { grid-template-rows:minmax(0, 1fr) 280px; }
+.broadcast-vote-results > strong { display:block; color:var(--lime); font:800 42px "JetBrains Mono"; }
+.broadcast-vote-results > small { display:block; margin:2px 0 22px; color:#8d8d95; font:700 var(--overlay-caption) "JetBrains Mono"; }
+.broadcast-vote-results > div { display:grid; gap:4px; margin:16px 0; overflow:hidden; }
+.broadcast-vote-results > div b { color:#bb8cff; font:700 var(--overlay-caption) "JetBrains Mono"; }
+.broadcast-vote-results > div span { overflow:hidden; color:#d2d2d7; font-size:var(--overlay-caption); text-overflow:ellipsis; white-space:nowrap; }
+.broadcast-live-votes > div { display:grid; grid-template-columns:38px 1fr auto; align-items:center; gap:10px; margin:15px 0; font:700 var(--overlay-caption) "JetBrains Mono"; }
+.broadcast-live-votes > div b { color:#10120b; background:var(--lime); text-align:center; }
+.broadcast-live-votes > div span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.broadcast-live-votes > div strong { color:var(--lime); }
+.broadcast-credits > div { display:grid; grid-template-columns:24px 1fr auto; align-items:center; gap:8px; margin-top:10px; color:#c9c9cf; font:600 var(--overlay-caption) "JetBrains Mono"; }
+.broadcast-credits > div > b { display:grid; place-items:center; width:24px; height:24px; color:var(--cyan); background:transparent; font-size:var(--overlay-caption); }
+.broadcast-credits > div:nth-of-type(2n) > b { color:var(--pink); }
 .broadcast-credits strong { color:var(--lime); font:700 var(--overlay-mono) "JetBrains Mono"; }
 .broadcast-credits small, .broadcast-patches small, .broadcast-chat small { color:#8d8d95; font-size:var(--overlay-caption); }
-.broadcast-patches > div { display:grid; grid-template-columns:74px 1fr; gap:12px; padding:12px 0; font-size:var(--overlay-body); }
+.broadcast-patches > div { display:grid; grid-template-columns:64px 1fr; gap:10px; padding:9px 0; font-size:var(--overlay-caption); }
 .broadcast-patches code { width:max-content; padding:3px 6px; border:1px solid var(--lime); color:var(--lime); font-size:var(--overlay-mono); line-height:1; }
 .broadcast-patches .rolled_back { color:#8d8d95; text-decoration:line-through; }
 .broadcast-patches .rolled_back code { border-color:var(--pink); color:var(--pink); }
 .broadcast-patches .base { color:#6e6e75; }
 .broadcast-patches .base code { border-color:#66666e; color:#8a8a92; }
-.broadcast-chat > div { overflow:hidden; margin:12px 0; color:#c9c9cf; text-overflow:ellipsis; white-space:nowrap; font-size:var(--overlay-body); }
+.broadcast-chat > div { overflow:hidden; margin:10px 0; color:#c9c9cf; text-overflow:ellipsis; white-space:nowrap; font-size:var(--overlay-caption); }
 .broadcast-chat b { color:#3de0ff; margin-right:5px; font-weight:600; }
 .phase-card { position:absolute; z-index:8; left:50%; top:50%; transform:translate(-50%, -50%); animation:overlay-enter 300ms ease-out both; }
 .broadcast-pitch { position:absolute; z-index:8; top:24px; left:50%; width:min(var(--pitch-banner-width), calc(100% - 48px)); height:var(--pitch-banner-height); transform:translateX(-50%); display:grid; place-items:center; padding:0 28px; border:2px solid var(--lime); color:#efeff1; background:rgba(14,14,16,.94); }

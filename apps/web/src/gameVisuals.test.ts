@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { arenaHudCopy, buildEmoteCatalog, gameVisualSources, obstacleSpawnScale, renderEffectProfile, resolveEmoteUrl, scorePulseScale } from "./gameVisuals";
+import { arenaHudCopy, arenaPlayerAppearance, arenaPlayerLabel, buildEmoteCatalog, emoteObstacleAppearance, gameVisualSources, obstacleSpawnScale, renderEffectProfile, resolveEmoteUrl, scorePulseScale } from "./gameVisuals";
 
 describe("game visuals", () => {
   it("resolves an emote patch to the Twitch CDN image by name", () => {
@@ -22,14 +22,25 @@ describe("game visuals", () => {
     );
   });
 
-  it("selects Twitch emote and broadcaster profile images for the live arena", () => {
+  it("keeps Twitch identity on the broadcast rail and renders the artifact pixel player", () => {
     const catalog = buildEmoteCatalog([
       { id: "25", name: "Kappa", url: "https://cdn.test/kappa.png" }
     ]);
 
     expect(gameVisualSources("emote:Kappa", catalog, "https://cdn.test/profile.png")).toEqual({
       obstacleImageUrl: "https://cdn.test/kappa.png",
-      playerImageUrl: "https://cdn.test/profile.png"
+      playerImageUrl: null
+    });
+    expect(arenaPlayerAppearance()).toEqual({ shape: "compact-cube", fill: "#3de0ff" });
+    expect(arenaPlayerLabel(" whalebus_97 ", "Player")).toBe("whalebus_97");
+    expect(arenaPlayerLabel("", "STREAMER")).toBe("STREAMER");
+    expect(emoteObstacleAppearance()).toEqual({
+      imageSmoothingEnabled: false,
+      filter: "sepia(1) saturate(7) hue-rotate(345deg) brightness(1.2) contrast(1.25)",
+      sourceOpacity: 0.18,
+      face: "artifact-pog",
+      badge: "#f4a62a",
+      outline: "#71341f"
     });
     expect(gameVisualSources("square", catalog, "")).toEqual({
       obstacleImageUrl: null,

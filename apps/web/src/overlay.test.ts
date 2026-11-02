@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { BroadcastState } from "@chaos-patch/schema";
-import { createApplyPresentation, createCompilePresentation, createOverlayPresentation, createOverlayRail, createPitchPresentation, createRollbackLabel } from "./overlay";
+import { createActivePatchChips, createApplyPresentation, createCompilePresentation, createOverlayPresentation, createOverlayRail, createPitchPresentation, createRollbackLabel, createVoteRailPresentation, formatOverlayVersion } from "./overlay";
 
 const voteRound: BroadcastState = {
   round: 7,
@@ -18,6 +18,21 @@ const voteRound: BroadcastState = {
 };
 
 describe("broadcast overlay presentation", () => {
+  it("turns the active patch knobs into the compact M3 effect chips", () => {
+    expect(createActivePatchChips({
+      version: 6,
+      title: "Chaos Stack",
+      proposer: "kim",
+      notes: [],
+      params: {
+        obstacleSprite: "emote:Kappa",
+        obstacleScale: 2.6,
+        wind: 0.5,
+        controlsMirrored: true
+      }
+    })).toEqual(["Giant Emotes", "Wind →", "Mirror"]);
+  });
+
   it("turns a vote round into three audience-readable choices", () => {
     expect(createOverlayPresentation(voteRound)).toMatchObject({
       phase: "VOTE",
@@ -27,6 +42,29 @@ describe("broadcast overlay presentation", () => {
         { number: 1, title: "Lava Floor", votes: 12, leading: false },
         { number: 2, title: "Giant Emotes", votes: 41, leading: true },
         { number: 3, title: "Mirror Controls", votes: 9, leading: false }
+      ]
+    });
+  });
+
+  it("turns vote data into the artifact pitch-results side rail", () => {
+    const presentation = createVoteRailPresentation({
+      ...voteRound,
+      proposals: [
+        { id: "p1", userId: "u1", userName: "mina", text: "lava floor", createdAt: "2026-10-31T00:00:00.000Z" },
+        { id: "p2", userId: "u2", userName: "kim", text: "giant emotes", createdAt: "2026-10-31T00:00:01.000Z" }
+      ]
+    });
+
+    expect(presentation).toEqual({
+      ideaCount: "2 ideas",
+      proposals: [
+        { userName: "mina", text: "lava floor" },
+        { userName: "kim", text: "giant emotes" }
+      ],
+      liveVotes: [
+        { number: 1, title: "Lava Floor", votes: 12 },
+        { number: 2, title: "Giant Emotes", votes: 41 },
+        { number: 3, title: "Mirror Controls", votes: 9 }
       ]
     });
   });
@@ -80,11 +118,12 @@ describe("broadcast overlay presentation", () => {
   });
 
   it("labels a rollback with the restored build version", () => {
-    expect(createRollbackLabel({ ...voteRound, activePatch: null })).toBe("ROLLBACK → v1");
+    expect(formatOverlayVersion(6)).toBe("v1.6");
+    expect(createRollbackLabel({ ...voteRound, activePatch: null })).toBe("ROLLBACK → v1.0");
     expect(createRollbackLabel({
       ...voteRound,
       activePatch: { version: 4, title: "Stable Wind", notes: ["Safe wind"], proposer: "mina", params: { wind: 0.4 } }
-    })).toBe("ROLLBACK → v4");
+    })).toBe("ROLLBACK → v1.4");
   });
 
   it("builds the artifact side rail in credits, notes, chat order", () => {
@@ -109,7 +148,7 @@ describe("broadcast overlay presentation", () => {
       { userName: "mina", text: "this is chaos" }
     ])).toEqual({
       sectionOrder: ["credits", "patches", "chat"],
-      activeTitles: ["Giant Emotes", "Wind Gusts"],
+      activeTitles: ["Giant Emotes"],
       credits: [
         { name: "kim", count: 2 },
         { name: "mina", count: 1 }

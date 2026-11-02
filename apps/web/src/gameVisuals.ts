@@ -25,10 +25,30 @@ export function resolveEmoteUrl(sprite: string, catalog: EmoteCatalog): string |
 }
 
 export function gameVisualSources(sprite: string, catalog: EmoteCatalog, profileImageUrl?: string | null) {
+  void profileImageUrl;
   return {
     obstacleImageUrl: resolveEmoteUrl(sprite, catalog),
-    playerImageUrl: profileImageUrl?.trim() || null
+    playerImageUrl: null
   };
+}
+
+export function arenaPlayerAppearance() {
+  return { shape: "compact-cube", fill: "#3de0ff" } as const;
+}
+
+export function arenaPlayerLabel(channelName: string | null | undefined, patchLabel: string) {
+  return channelName?.trim() || patchLabel;
+}
+
+export function emoteObstacleAppearance() {
+  return {
+    imageSmoothingEnabled: false,
+    filter: "sepia(1) saturate(7) hue-rotate(345deg) brightness(1.2) contrast(1.25)",
+    sourceOpacity: 0.18,
+    face: "artifact-pog",
+    badge: "#f4a62a",
+    outline: "#71341f"
+  } as const;
 }
 
 export function renderEffectProfile(cameraShake: number, fog: number, elapsedSeconds: number, hitAgeMs = Number.POSITIVE_INFINITY) {

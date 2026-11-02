@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { applyPatch, createGameState, resizeGame, restartGame, type GameState } from "@chaos-patch/game";
 import { defaultPatchParams, type PatchV1 } from "@chaos-patch/schema";
 import { advanceGameFrame, bestSurvivalSeconds, canRestartRun } from "../gameRuntime";
-import { arenaHudCopy, gameVisualSources, obstacleSpawnScale, renderEffectProfile, scorePulseScale, type EmoteCatalog } from "../gameVisuals";
+import { arenaHudCopy, arenaPlayerAppearance, arenaPlayerLabel, emoteObstacleAppearance, gameVisualSources, obstacleSpawnScale, renderEffectProfile, scorePulseScale, type EmoteCatalog } from "../gameVisuals";
 import { PatchHealthGuard } from "../patchHealth";
 
 type Props = {
@@ -10,12 +10,13 @@ type Props = {
   paused?: boolean;
   emoteCatalog?: EmoteCatalog;
   playerImageUrl?: string | null;
+  playerLabel?: string | null;
   onPatchFailure?: (version: number, reason: "early_crash" | "low_fps") => void;
 };
 
 const emptyCatalog: EmoteCatalog = new Map();
 
-export function GameCanvas({ patch, paused = false, emoteCatalog = emptyCatalog, playerImageUrl = null, onPatchFailure }: Props) {
+export function GameCanvas({ patch, paused = false, emoteCatalog = emptyCatalog, playerImageUrl = null, playerLabel = null, onPatchFailure }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stateRef = useRef<GameState>(createGameState());
   const inputRef = useRef({ left: false, right: false });
@@ -23,7 +24,7 @@ export function GameCanvas({ patch, paused = false, emoteCatalog = emptyCatalog,
   const pausedRef = useRef(paused);
   const failureHandlerRef = useRef(onPatchFailure);
   const healthGuardRef = useRef(new PatchHealthGuard());
-  const visualsRef = useRef({ emoteCatalog, playerImageUrl });
+  const visualsRef = useRef({ emoteCatalog, playerImageUrl, playerLabel });
   const imageCacheRef = useRef(new Map<string, HTMLImageElement>());
   const reportedVersionRef = useRef<number | null>(null);
   const bestSecondsRef = useRef(0);
@@ -47,7 +48,7 @@ export function GameCanvas({ patch, paused = false, emoteCatalog = emptyCatalog,
   }, [paused]);
 
   useEffect(() => {
-    visualsRef.current = { emoteCatalog, playerImageUrl };
+    visualsRef.current = { emoteCatalog, playerImageUrl, playerLabel };
     const sources = gameVisualSources(
       patchRef.current?.params.obstacleSprite ?? "circle",
       emoteCatalog,
@@ -56,7 +57,7 @@ export function GameCanvas({ patch, paused = false, emoteCatalog = emptyCatalog,
     for (const url of [sources.obstacleImageUrl, sources.playerImageUrl]) {
       if (url) loadImage(imageCacheRef.current, url);
     }
-  }, [emoteCatalog, playerImageUrl]);
+  }, [emoteCatalog, playerImageUrl, playerLabel]);
 
   useEffect(() => {
     patchRef.current = patch;
@@ -164,7 +165,7 @@ function loadImage(cache: Map<string, HTMLImageElement>, url: string): HTMLImage
 function drawGame(
   ctx: CanvasRenderingContext2D,
   state: GameState,
-  visuals: { emoteCatalog: EmoteCatalog; playerImageUrl: string | null },
+  visuals: { emoteCatalog: EmoteCatalog; playerImageUrl: string | null; playerLabel: string | null },
   imageCache: Map<string, HTMLImageElement>,
   bestSeconds: number,
   paused: boolean,
@@ -198,7 +199,15 @@ function drawGame(
     ctx.fill();
     ctx.restore();
     if (obstacleImage?.complete && obstacleImage.naturalWidth > 0) {
-      ctx.drawImage(obstacleImage, item.x - visualRadius, item.y - visualRadius, visualRadius * 2, visualRadius * 2);
+      const appearance = emoteObstacleAppearance();
+      drawPixelEmoteBadge(ctx, item.x, item.y, visualRadius, appearance.outline, appearance.badge);
+      ctx.save();
+      ctx.imageSmoothingEnabled = appearance.imageSmoothingEnabled;
+      ctx.filter = appearance.filter;
+      ctx.globalAlpha = appearance.sourceOpacity;
+      ctx.drawImage(obstacleImage, item.x - visualRadius * .84, item.y - visualRadius * .84, visualRadius * 1.68, visualRadius * 1.68);
+      ctx.restore();
+      drawPixelEmoteFace(ctx, item.x, item.y, visualRadius);
     } else if (state.params.obstacleSprite === "square") {
       ctx.fillStyle = obstacle;
       ctx.fillRect(item.x - visualRadius, item.y - visualRadius, visualRadius * 2, visualRadius * 2);
@@ -207,42 +216,20 @@ function drawGame(
       ctx.beginPath(); ctx.arc(item.x, item.y, visualRadius, 0, Math.PI * 2); ctx.fill();
     }
   }
-  const playerImage = sources.playerImageUrl ? loadImage(imageCache, sources.playerImageUrl) : null;
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(state.player.x, state.player.y, state.player.radius, 0, Math.PI * 2);
-  ctx.clip();
-  if (playerImage?.complete && playerImage.naturalWidth > 0) {
-    ctx.drawImage(
-      playerImage,
-      state.player.x - state.player.radius,
-      state.player.y - state.player.radius,
-      state.player.radius * 2,
-      state.player.radius * 2
-    );
-  } else {
-    ctx.fillStyle = state.params.invertColors ? background : player;
-    ctx.fill();
-  }
-  ctx.restore();
-  ctx.strokeStyle = player;
-  ctx.lineWidth = 3;
-  ctx.beginPath(); ctx.arc(state.player.x, state.player.y, state.player.radius + 2, 0, Math.PI * 2); ctx.stroke();
+  const playerAppearance = arenaPlayerAppearance();
+  drawPixelPlayer(ctx, state.player.x, state.player.y, state.player.radius, playerAppearance.fill);
+  const playerLabel = arenaPlayerLabel(visuals.playerLabel, state.params.labelPlayer);
   ctx.font = "700 12px ui-monospace, monospace";
   ctx.textAlign = "center";
-  ctx.fillStyle = "#efeff1";
-  ctx.fillText(state.params.labelPlayer, state.player.x, state.player.y - state.player.radius - 12);
-  ctx.textAlign = "left";
-  ctx.fillStyle = "rgba(239,239,241,.68)";
-  ctx.font = "700 10px ui-monospace, monospace";
-  ctx.fillText("SURVIVED", 20, 22);
-  ctx.fillText("BEST", 112, 22);
-  ctx.fillStyle = "#efeff1";
+  const labelWidth = Math.ceil(ctx.measureText(playerLabel).width) + 12;
+  const labelY = state.player.y - state.player.radius - 26;
+  ctx.fillStyle = "rgba(14,14,16,.9)";
+  ctx.fillRect(state.player.x - labelWidth / 2, labelY, labelWidth, 20);
+  ctx.fillStyle = "#c8ff3d";
+  ctx.fillText(playerLabel, state.player.x, labelY + 14);
   const scorePulse = scorePulseScale(state.elapsed);
-  ctx.fillStyle = scorePulse > 1 ? player : "#efeff1";
-  ctx.font = `800 ${17 * scorePulse}px ui-monospace, monospace`;
-  ctx.fillText(hud.survived, 20, 42);
-  ctx.fillText(hud.best, 112, 42);
+  drawHudPanel(ctx, 18, 16, 124, "SURVIVED", hud.survived, scorePulse > 1 ? player : "#efeff1", scorePulse);
+  drawHudPanel(ctx, 148, 16, 100, "BEST", hud.best, "#efeff1", 1);
   ctx.restore();
   if (effects.fogOpacity > 0) {
     const fog = ctx.createRadialGradient(state.width / 2, state.height / 2, 40, state.width / 2, state.height / 2, state.width * .7);
@@ -257,6 +244,88 @@ function drawGame(
     ctx.fillText("RUN ENDED", state.width / 2, state.height / 2 - 8);
     ctx.font = "500 14px system-ui"; ctx.fillText("Press space or restart below", state.width / 2, state.height / 2 + 24);
   }
+}
+
+function drawPixelEmoteBadge(ctx: CanvasRenderingContext2D, x: number, y: number, radius: number, outline: string, fill: string) {
+  const polygon = (scale: number) => {
+    const r = radius * scale;
+    const cut = r * .42;
+    ctx.beginPath();
+    ctx.moveTo(x - cut, y - r);
+    ctx.lineTo(x + cut, y - r);
+    ctx.lineTo(x + r, y - cut);
+    ctx.lineTo(x + r, y + cut);
+    ctx.lineTo(x + cut, y + r);
+    ctx.lineTo(x - cut, y + r);
+    ctx.lineTo(x - r, y + cut);
+    ctx.lineTo(x - r, y - cut);
+    ctx.closePath();
+  };
+  ctx.fillStyle = outline;
+  polygon(1);
+  ctx.fill();
+  ctx.fillStyle = fill;
+  polygon(.84);
+  ctx.fill();
+}
+
+function drawPixelEmoteFace(ctx: CanvasRenderingContext2D, x: number, y: number, radius: number) {
+  const unit = Math.max(2, Math.round(radius / 7));
+  ctx.save();
+  ctx.translate(Math.round(x), Math.round(y));
+  ctx.fillStyle = "#fff0a0";
+  ctx.fillRect(-unit * 4, -unit * 4, unit * 3, unit * 3);
+  ctx.fillRect(unit, -unit * 4, unit * 3, unit * 3);
+  ctx.fillStyle = "#5a261c";
+  ctx.fillRect(-unit * 3, -unit * 3, unit * 2, unit * 2);
+  ctx.fillRect(unit, -unit * 3, unit * 2, unit * 2);
+  ctx.fillRect(-unit * 3, unit, unit * 6, unit * 4);
+  ctx.fillStyle = "#241014";
+  ctx.fillRect(-unit * 2, unit * 2, unit * 4, unit * 3);
+  ctx.fillStyle = "#ff6b42";
+  ctx.fillRect(-unit, unit * 4, unit * 2, unit);
+  ctx.fillStyle = "#ffd34f";
+  ctx.fillRect(-unit * 5, -unit, unit, unit * 2);
+  ctx.fillRect(unit * 4, -unit, unit, unit * 2);
+  ctx.restore();
+}
+
+function drawPixelPlayer(ctx: CanvasRenderingContext2D, x: number, y: number, radius: number, fill: string) {
+  const unit = Math.max(2, Math.round(radius / 6));
+  ctx.save();
+  ctx.translate(Math.round(x), Math.round(y));
+  ctx.fillStyle = "rgba(61,224,255,.24)";
+  ctx.fillRect(-unit * 4, radius + unit, unit * 8, unit * 2);
+  ctx.fillStyle = fill;
+  ctx.fillRect(-unit * 3, -radius, unit * 6, unit * 6);
+  ctx.fillRect(-unit * 2, -radius + unit * 6, unit * 4, unit * 4);
+  ctx.fillRect(-unit * 3, -radius + unit * 7, unit, unit * 3);
+  ctx.fillRect(unit * 2, -radius + unit * 7, unit, unit * 3);
+  ctx.fillRect(-unit * 2, -radius + unit * 10, unit, unit * 2);
+  ctx.fillRect(unit, -radius + unit * 10, unit, unit * 2);
+  ctx.fillStyle = "#d9fbff";
+  ctx.fillRect(-unit * 2, -radius + unit * 2, unit, unit * 2);
+  ctx.fillRect(unit, -radius + unit * 2, unit, unit * 2);
+  ctx.fillStyle = "#10222b";
+  ctx.fillRect(-unit, -radius + unit * 4, unit * 2, unit);
+  ctx.restore();
+}
+
+function drawHudPanel(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, label: string, value: string, valueColor: string, scale: number) {
+  ctx.save();
+  ctx.fillStyle = "rgba(14,14,16,.82)";
+  ctx.fillRect(x, y, width, 56);
+  ctx.strokeStyle = "rgba(145,70,255,.28)";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x + .5, y + .5, width - 1, 55);
+  ctx.textAlign = "left";
+  ctx.fillStyle = "rgba(239,239,241,.68)";
+  ctx.font = "700 10px ui-monospace, monospace";
+  ctx.fillText(label, x + 12, y + 18);
+  ctx.fillStyle = valueColor;
+  ctx.font = `800 ${17 * scale}px ui-monospace, monospace`;
+  ctx.fillText(value, x + 12, y + 42);
+  ctx.restore();
 }
 
 function drawPixelWorld(ctx: CanvasRenderingContext2D, width: number, height: number, lime: string) {
