@@ -94,6 +94,7 @@ export function createChaosPatchServer(options: ServerOptions) {
   let completedCompile: { roundNumber: number; result: CompileResult } | null = null;
   let candidateCompressionPromise: Promise<ReturnType<RoundStore["snapshot"]>> | null = null;
   const announcementsByRound = new Map<number, Set<AnnouncementKind>>();
+  const pendingAnnouncementEchoes = new Set<string>();
   const votesByPatchVersion = new Map<number, number>();
   const appliedAtByPatchVersion = new Map<number, string>();
   let sessionDate = sessionDateInSeoul();
@@ -105,7 +106,12 @@ export function createChaosPatchServer(options: ServerOptions) {
     if (sent.has(kind)) return;
     sent.add(kind);
     announcementsByRound.set(roundNumber, sent);
-    void options.twitch.sendChatMessage(message.slice(0, 500)).catch((error) => {
+    const outgoing = message.slice(0, 500);
+    pendingAnnouncementEchoes.add(outgoing);
+    const expiry = setTimeout(() => pendingAnnouncementEchoes.delete(outgoing), 60_000);
+    expiry.unref();
+    void options.twitch.sendChatMessage(outgoing).catch((error) => {
+      pendingAnnouncementEchoes.delete(outgoing);
       app.log.warn(error, `Twitch ${kind} announcement failed`);
     });
   }
@@ -176,10 +182,11 @@ export function createChaosPatchServer(options: ServerOptions) {
 
   function handleChat(message: TwitchChatMessage) {
     telemetry.recordChat();
-    const filtered = rounds.proposalIsBlocked(message.text);
-    const proposal = rounds.addProposal(message.userId, message.userName, message.text);
+    const systemEcho = pendingAnnouncementEchoes.delete(message.text);
+    const filtered = systemEcho ? false : rounds.proposalIsBlocked(message.text);
+    const proposal = systemEcho ? null : rounds.addProposal(message.userId, message.userName, message.text);
     if (filtered) filteredCount += 1;
-    if (/^[123]$/.test(message.text.trim())) rounds.vote(message.userId, Number(message.text.trim()));
+    if (!systemEcho && /^[123]$/.test(message.text.trim())) rounds.vote(message.userId, Number(message.text.trim()));
     const visibleMessage = filtered ? { ...message, text: "[filtered]", filtered: true } : { ...message, filtered: false };
     broadcast("chat:message", visibleMessage);
     if (proposal) broadcast("proposal:added", proposal);

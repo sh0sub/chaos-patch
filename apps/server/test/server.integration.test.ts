@@ -255,6 +255,27 @@ describe("Chaos Patch HTTP server", () => {
     await server.close();
   });
 
+  it("does not turn an echoed system announcement into a viewer proposal", async () => {
+    const twitch = new FakeTwitch();
+    const server = createChaosPatchServer({
+      twitch,
+      compileCandidate: async () => patch,
+      sessionSecret: "test-session-secret-that-is-at-least-32-characters",
+      webOrigin: "http://localhost:5173",
+      tickMilliseconds: 10_000
+    });
+
+    await server.inject({ method: "POST", url: "/api/session/start" });
+    await server.inject({ method: "POST", url: "/api/session/advance" });
+    const announcement = twitch.chatMessages[0]!;
+    twitch.emit("chat", { id: "system-echo", userId: "bot", userName: "tester", text: announcement, sentAt: new Date().toISOString() });
+    twitch.emit("chat", { id: "viewer-idea", userId: "viewer", userName: "viewer", text: "!patch giant emotes", sentAt: new Date().toISOString() });
+
+    const status = await server.inject({ method: "GET", url: "/api/status" });
+    expect(status.json().round.proposals).toMatchObject([{ userName: "viewer", text: "giant emotes" }]);
+    await server.close();
+  });
+
   it("creates a clip on APPLY and includes its URL in the result announcement", async () => {
     const twitch = new FakeTwitch();
     const server = createChaosPatchServer({
