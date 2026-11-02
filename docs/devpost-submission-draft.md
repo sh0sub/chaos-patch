@@ -20,9 +20,9 @@ Repository visibility before submission: **Public** (verified 2026-11-02).
 
 ## Demonstration video
 
-https://youtu.be/Og-2QXDCgjc
+https://youtu.be/ssj7tH0SIBo
 
-Published publicly on the **SH Labs** channel on 2026-11-02. Final V4 runtime: **2:11.40**.
+Published publicly on the **SH Labs** channel on 2026-11-03. Final V13 runtime: **1:51** (`1:52` as displayed by YouTube).
 
 The final video must be under three minutes, show the project functioning on Twitch, show how it was built with Codex, and avoid unlicensed music or third-party copyrighted material.
 
@@ -105,7 +105,7 @@ Another useful failure was a no-participant round that could have triggered an u
 - The applied patch visibly changes the game without deploying new frontend code.
 - Unsafe patches can roll back automatically while preserving a clear recap trail.
 - The same interface works as a desktop control room, mobile dashboard, and OBS overlay.
-- The project gate currently passes strict type checking, 111 automated tests, and a production build.
+- The project gate currently passes strict type checking, 119 automated tests, and a production build.
 - Raw evidence captures are kept outside Git, while the repository contains reproducible tests and clear setup instructions.
 
 ## What we learned
@@ -141,12 +141,12 @@ The project is free to run for judging. API usage is limited to the entrant's co
 ## Final submission checklist
 
 - [x] Repository URL is public and accessible to judges with source, assets, and instructions.
-- [x] `pnpm check` passes from the final commit (111 tests, strict type checking, production build).
+- [x] `pnpm check` passes from the final commit (119 tests, strict type checking, production build).
 - [x] Text description is in English and accurately distinguishes Codex from the runtime OpenAI API.
 - [x] Codex Session ID is copied from the final redacted `/status`.
-- [x] Public YouTube video is under three minutes (V4, 2:11.40): https://youtu.be/Og-2QXDCgjc
+- [x] Public YouTube video is under three minutes (V13, 1:51): https://youtu.be/ssj7tH0SIBo
 - [x] Video shows the project functioning on Twitch.
 - [x] Video shows how Codex was used to build it.
 - [x] Video contains no secrets, personal tabs, unlicensed music, or unsupported success claims.
-- [ ] Final Devpost submission is completed before November 2, 2026 at 2:00 PM Pacific Time.
-- [ ] Submission confirmation is captured after the final submit action.
+- [x] Final Devpost submission was completed before November 2, 2026 at 2:00 PM Pacific Time: https://devpost.com/software/chaos-patch
+- [x] Submission confirmation was captured after the final submit action at `screenshot/2026-11-03-devpost-submitted.png` (local ignored evidence).

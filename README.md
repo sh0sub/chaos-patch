@@ -54,7 +54,7 @@ D7 preparation verified on 2026-10-28: a real Twitch proposal and vote returned 
 
 Artifact-parity pass verified on 2026-10-29: the dedicated OBS overlay, real Kappa rendering, profile-image player path, `SURVIVED / BEST` game HUD, phase-aware game freeze, AI proposal compression, low-FPS rollback guard, session settings, Pause/Resume, and mobile control-room layout are implemented.
 
-Final submission verification completed on 2026-11-02: Setup, Live Control, mobile Recap, and the `/intro.html` product narrative share the same patch-notes × hacker-terminal visual system. A 59-second real-channel proof covers EventSub proposals, chat voting, OpenAI compilation, BUILD application, and rollback. The current project gate passes strict type checking, 111 automated tests, and the production build.
+Final submission verification completed on 2026-11-03: Setup, Live Control, mobile Recap, and the `/intro.html` product narrative share the same patch-notes × hacker-terminal visual system. The final real-channel proof covers EventSub proposals, chat voting, OpenAI compilation, BUILD application, visible gameplay, and automatic rollback. The current project gate passes strict type checking, 119 automated tests, and the production build. The public demo is available on [YouTube](https://youtu.be/ssj7tH0SIBo), and the submitted project is live on [Devpost](https://devpost.com/software/chaos-patch).
 
 ## License
 
