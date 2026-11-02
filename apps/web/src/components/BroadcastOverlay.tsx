@@ -97,6 +97,13 @@ export function BroadcastOverlay({ round, twitchUser, eventSubStatus, chat, patc
               </div>
             )}
 
+            {round.phase === "apply" && visiblePatch && !rolledBack && (
+              <div className="broadcast-compile broadcast-apply-terminal" role="status">
+                <header><span>PATCHING…</span><i className="compile-cursor" aria-hidden="true" /></header>
+                {compilePresentation.map((line, index) => <code style={{ animationDelay: `${index * 180}ms` }} key={line}>{line}</code>)}
+              </div>
+            )}
+
             {(round.phase === "apply" || patchEvent) && visiblePatch && (
               <div className={`broadcast-apply phase-card ${patchEvent?.kind ?? "applied"}`} role="status">
                 <span>{rolledBack ? createRollbackLabel(round) : "PATCH APPLIED"}</span>
